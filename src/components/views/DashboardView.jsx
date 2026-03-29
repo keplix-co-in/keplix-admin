@@ -3,6 +3,7 @@ import {
   PieChart, Pie, Cell
 } from "recharts";
 import { revenueData, cityData, serviceData } from "../../data";
+import { pendingActions, kpis } from "../../data/DashBoardMock";
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -19,29 +20,13 @@ const ChartTooltip = ({ active, payload, label }) => {
 };
 
 export default function DashboardView() {
-  const kpis = [
-    { label: "Today's GMV",       value: "₹94,000",   delta: "+18.2%", icon: "💰", color: "#ff3d3d" },
-    { label: "Platform Revenue",  value: "₹14,100",   delta: "+18.2%", icon: "📈", color: "#4CAF50" },
-    { label: "Bookings Today",    value: "52",         delta: "+8",     icon: "📋", color: "#2196F3" },
-    { label: "Active Vendors",    value: "284",        delta: "+12",    icon: "🏪", color: "#9C27B0" },
-    { label: "New Users Today",   value: "137",        delta: "+23",    icon: "👥", color: "#ff9944" },
-    { label: "Pending Payouts",   value: "₹9,333",    delta: "6 items", icon: "⏳", color: "#ff3d3d", alert: true },
-  ];
-
-  const pendingActions = [
-    { icon: "🏪", text: "2 new vendors awaiting verification", time: "Just now", type: "vendor", color: "#ff9944" },
-    { icon: "🔴", text: "Payout KPX-2828 expires in 2 hours!", time: "2h left", type: "urgent", color: "#ff3d3d" },
-    { icon: "⚖️", text: "Booking KPX-2835 has an open dispute", time: "4h ago", type: "dispute", color: "#ff3d3d" },
-    { icon: "💸", text: "Payout KPX-2837 due in 6 hours", time: "6h left", type: "payout", color: "#ff9944" },
-    { icon: "⭐", text: "Vendor 'Auto King Works' rated 2.1 — review needed", time: "1d ago", type: "quality", color: "#666677" },
-  ];
-
+ 
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       {/* KPIs */}
       <div className="grid grid-cols-6 gap-3.5 mb-6">
         {kpis.map((k, i) => (
-          <div key={i} className={`bg-[#141420] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25 bg-linear-to-br from-[#1a0e0e] to-brand-gray-100' : ''}`}>
+          <div key={i} className={`bg-brand-gray-100 rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25 bg-linear-to-br from-[#1a0e0e] to-brand-gray-100' : ''}`}>
             {k.alert && <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-brand-red to-[#ff6b00]" />}
             <div className="flex items-center justify-between mb-3">
               <span className="text-lg">{k.icon}</span>
