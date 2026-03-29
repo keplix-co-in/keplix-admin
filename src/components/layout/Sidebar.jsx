@@ -1,15 +1,8 @@
 import { Icon } from "../ui/Icon";
+import navItems from "../../data/Sidebarmock";
 
 export function Sidebar({ activeNav, setActiveNav }) {
-  const navItems = [
-    { id: "dashboard", label: "Dashboard",  icon: "dashboard" },
-    { id: "finance",   label: "Finance",    icon: "finance"   },
-    { id: "vendors",   label: "Vendors",    icon: "vendors"   },
-    { id: "bookings",  label: "Bookings",   icon: "bookings"  },
-    { id: "analytics", label: "Analytics",  icon: "analytics" },
-    { id: "users",     label: "Users",      icon: "users"     },
-  ];
-
+  
   return (
     <div className="w-[220px] bg-[#0e0e18] border-r border-brand-gray-400 flex flex-col p-6 shrink-0">
       {/* Logo */}
@@ -26,20 +19,27 @@ export function Sidebar({ activeNav, setActiveNav }) {
       {/* Nav */}
       <div className="flex-1">
         <div className="text-[9px] text-brand-gray-600 tracking-[1.5px] font-bold px-2 pb-2 uppercase">Main Menu</div>
-        {navItems.map(item => (
-          <div key={item.id} className={`flex items-center gap-2.5 py-2.5 px-4 rounded-xl cursor-pointer transition-all duration-200 text-[13px] font-medium text-white/35 border border-transparent mb-0.5 hover:text-white/70 hover:bg-white/5${activeNav === item.id ? " text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`} onClick={() => setActiveNav(item.id)}>
+        {navItems.map(item => ( 
+          <div key={item.id} className={`flex items-center gap-3 py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${activeNav === item.id ? "bg-brand-red/10 text-white" : "text-white/35 hover:text-white/70 hover:bg-white/5"}`}onClick={() => setActiveNav(item.id)}>
             <Icon name={item.icon} size={15} color={activeNav === item.id ? "#ff3d3d" : "currentColor"} />
             {item.label}
-            {item.id === "vendors" && <span className="ml-auto bg-yellow-500/20 text-yellow-400 text-[9px] font-bold py-0.5 px-1.5 rounded-full">2</span>}
-            {item.id === "finance" && <span className="ml-auto bg-red-500/20 text-red-400 text-[9px] font-bold py-0.5 px-1.5 rounded-full">!</span>}
+            {item.id === "vendors" && <span className="ml-auto bg-brand-red text-white text-[10px] font-bold px-2 py-1 rounded-full">54</span>}
+            {item.id === "finance" && <span className="ml-auto bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">₹1.2M</span>}
           </div>
         ))}
       </div>
 
       {/* Bottom */}
       <div className="border-t border-brand-gray-400 pt-4">
-        <div className="flex items-center gap-2.5 py-2.5 px-4 rounded-xl cursor-pointer transition-all duration-200 text-[13px] font-medium text-white/35 border border-transparent mb-0.5 hover:text-white/70 hover:bg-white/5 mb-0">
-          <Icon name="settings" size={15} />Settings
+        <div 
+          onClick={() => setActiveNav('settings')}
+          className={`flex items-center gap-2.5 py-2.5 px-4 rounded-xl cursor-pointer transition-all duration-200 text-[13px] font-medium border mb-0 ${
+            activeNav === 'settings' 
+              ? 'bg-[rgba(255,61,61,0.12)] text-white border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]' 
+              : 'text-white/35 border-transparent hover:text-white/70 hover:bg-white/5'
+          }`}
+        >
+          <Icon name="settings" size={15} color={activeNav === 'settings' ? '#ff3d3d' : 'currentColor'} />Settings
         </div>
         <div className="flex items-center gap-2.5 pt-3 mt-2 border-t border-brand-gray-400">
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-red to-[#ff4400] flex items-center justify-center text-sm">👤</div>
