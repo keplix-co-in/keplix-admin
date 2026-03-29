@@ -62,3 +62,14 @@ export const bookings = [
   { id: "KPX-2834", user: "Amit Joshi",    phone: "80100-55555", vendor: "Sharma Car Care",    service: "Full Car Service",   slot: "10 Feb, 1:00 PM", amount: 1800, commission: 270, status: "confirmed" },
   { id: "KPX-2833", user: "Pooja Rao",     phone: "95200-66666", vendor: "SOS Road Rescue",    service: "Emergency Towing",   slot: "10 Feb, 8:00 AM", amount: 1500, commission: 225, status: "cancelled" },
 ];
+
+export const usersData = [
+  { id: "U-4021", name: "Rahul Verma",     email: "rahul.v@example.com",     phone: "+91 98765 43210", role: "End User", status: "active",   bookings: 12, joined: "Nov 5, 2024",  lastActive: "2 mins ago" },
+  { id: "U-4020", name: "Priya Sharma",    email: "priya.sharma@example.com",phone: "+91 87654 32109", role: "Pro User", status: "active",   bookings: 45, joined: "Oct 12, 2024", lastActive: "1 hour ago" },
+  { id: "U-4019", name: "Amit Kumar",      email: "amit.k@example.com",      phone: "+91 76543 21098", role: "End User", status: "inactive", bookings: 2,  joined: "Jan 20, 2025", lastActive: "2 weeks ago" },
+  { id: "U-4018", name: "Sneha Patel",     email: "sneha.p@example.com",     phone: "+91 65432 10987", role: "Pro User", status: "active",   bookings: 89, joined: "Sep 1, 2024",  lastActive: "5 mins ago" },
+  { id: "U-4017", name: "Vikram Singh",    email: "vikram.s@example.com",    phone: "+91 54321 09876", role: "End User", status: "banned",   bookings: 0,  joined: "Feb 10, 2025", lastActive: "1 month ago" },
+  { id: "U-4016", name: "Neha Gupta",      email: "neha.g@example.com",      phone: "+91 99887 76655", role: "End User", status: "active",   bookings: 5,  joined: "Dec 14, 2024", lastActive: "1 day ago" },
+  { id: "U-4015", name: "Rajat Desai",     email: "rajat.d@example.com",     phone: "+91 88776 65544", role: "Pro User", status: "active",   bookings: 112,joined: "Aug 22, 2024", lastActive: "Just now" },
+  { id: "U-4014", name: "Pooja Reddy",     email: "pooja.r@example.com",     phone: "+91 77665 54433", role: "End User", status: "inactive", bookings: 1,  joined: "Feb 28, 2025", lastActive: "3 weeks ago" },
+];
