@@ -1,12 +1,8 @@
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { funnelData, cityData } from "../../data";
+import { retentionData } from "../../data/AnalyticsViewMock";
 
 export default function AnalyticsView() {
-  const retentionData = [
-    { week: "W1", rate: 28 }, { week: "W2", rate: 34 }, { week: "W3", rate: 41 },
-    { week: "W4", rate: 38 }, { week: "W5", rate: 47 }, { week: "W6", rate: 52 },
-    { week: "W7", rate: 49 },
-  ];
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -40,7 +36,7 @@ export default function AnalyticsView() {
         </div>
 
         {/* Retention */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">🔁 Repeat Booking Rate</span>
             <span className="text-xs font-bold text-green-500">↑ Trending Up</span>
