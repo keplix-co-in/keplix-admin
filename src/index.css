@@ -1,3 +1,29 @@
-@import "tailwindcss/preflight";
-@import "tailwindcss/theme";
-@import "tailwindcss/utilities";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@700;800&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-brand-red: #ff3d3d;
+  --color-brand-red-dark: #cc3131;
+  --color-brand-black: #0c0c12;
+  --color-brand-gray-100: #141420;
+  --color-brand-gray-200: #1a1a25;
+  --color-brand-gray-300: #666677;
+  --color-brand-gray-400: rgba(255, 255, 255, 0.05);
+  --color-brand-gray-500: rgba(255, 255, 255, 0.1);
+  --color-brand-gray-600: rgba(255, 255, 255, 0.2);
+  --color-brand-gray-700: rgba(255, 255, 255, 0.3);
+  --color-brand-gray-800: rgba(255, 255, 255, 0.5);
+  --color-brand-gray-900: rgba(255, 255, 255, 0.7);
+  --font-sans: "DM Sans", sans-serif;
+  --font-syne: "Syne", sans-serif;
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(0.8); }
+  }
+
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
