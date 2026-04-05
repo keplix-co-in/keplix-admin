@@ -1,7 +1,7 @@
 import { Icon } from "../ui/Icon";
 import navItems from "../../data/Sidebarmock";
 
-export function Sidebar({ activeNav, setActiveNav }) {
+export function Sidebar({ activeNav, setActiveNav, onLogout }) {
   
   return (
     <div className="w-[220px] bg-[#0e0e18] border-r border-brand-gray-400 flex flex-col p-6 shrink-0">
@@ -47,7 +47,9 @@ export function Sidebar({ activeNav, setActiveNav }) {
             <div className="text-xs font-semibold text-white">Super Admin</div>
             <div className="text-[10px] text-brand-gray-700 overflow-hidden text-ellipsis whitespace-nowrap">admin@keplix.in</div>
           </div>
-          <Icon name="logout" size={14} color="rgba(255,255,255,0.3)" />
+          <button onClick={onLogout} className="bg-transparent border-none cursor-pointer flex items-center justify-center p-2 rounded-full hover:bg-white/10 transition-colors" title="Logout">
+            <Icon name="logout" size={14} color="rgba(255,255,255,0.8)" />
+          </button>
         </div>
       </div>
     </div>
