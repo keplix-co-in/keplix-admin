@@ -8,8 +8,10 @@ import UsersView from '../components/views/UsersView';
 import SettingsView from '../components/views/SettingsView';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
+import Login from './Login';
 
 export default function KeplixAdmin() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [activeNav, setActiveNav] = useState('dashboard');
   const [bookingFilter, setBookingFilter] = useState('All');
   const [vendorFilter, setVendorFilter] = useState('All');
@@ -20,10 +22,12 @@ export default function KeplixAdmin() {
     return () => clearInterval(t);
   }, []);
 
+  // if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
+
   return (
     <div className="flex h-screen bg-brand-black font-sans overflow-hidden text-white">
       {/* -- SIDEBAR -- */}
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} />
+      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} onLogout={() => setIsAuthenticated(false)} />
 
       {/* -- MAIN -- */}
       <div className="flex-1 flex flex-col overflow-hidden">
