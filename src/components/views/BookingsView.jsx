@@ -1,7 +1,10 @@
+import { useState } from 'react';
 import { bookings } from "../../data";
 import { bookingStatusConfig } from "../../data/config";
+import BookingCard from "../Cards/BookingCard";
 
 export default function BookingsView({ filter, setFilter }) {
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const filters = ["All", "Completed", "In Progress", "Confirmed", "Disputed", "Cancelled"];
   const keyMap = { "All": "All", "Completed": "completed", "In Progress": "in_progress", "Confirmed": "confirmed", "Disputed": "disputed", "Cancelled": "cancelled" };
   const filtered = bookings.filter(b => filter === "All" || b.status === keyMap[filter]);
@@ -23,7 +26,12 @@ export default function BookingsView({ filter, setFilter }) {
           const sc = bookingStatusConfig[b.status];
           return (
             <div key={i} className="grid items-center py-3 px-4 rounded-lg transition-colors duration-150 border-b border-white/5 hover:bg-white/5 grid-cols-[90px_140px_130px_160px_140px_120px_90px_80px_90px] gap-2">
-              <div className="text-xs text-brand-red/70 font-mono font-bold">{b.id}</div>
+              <div 
+                className="text-xs text-brand-red/80 font-mono font-bold cursor-pointer hover:text-brand-red hover:underline transition-colors"
+                onClick={() => setSelectedBooking(b)}
+              >
+                {b.id}
+              </div>
               <div className="text-sm font-semibold text-white">{b.user}</div>
               <div className="text-xs text-brand-gray-700 font-mono">{b.phone}</div>
               <div className="text-xs text-brand-gray-800">{b.vendor}</div>
@@ -36,6 +44,7 @@ export default function BookingsView({ filter, setFilter }) {
           );
         })}
       </div>
+      {selectedBooking && <BookingCard booking={selectedBooking} onClose={() => setSelectedBooking(null)} />}
     </div>
   );
 }

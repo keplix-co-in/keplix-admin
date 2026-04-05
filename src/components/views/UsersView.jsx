@@ -2,15 +2,26 @@ import { useState } from 'react';
 import { usersData } from "../../data";
 import { userStatusConfig } from "../../data/config";
 import { Icon } from "../ui/Icon";
+import UserCard from "../Cards/UserCard";
 
 export default function UsersView() {
   const [filter, setFilter] = useState('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
   const filters = ["All", "Active", "Inactive", "Banned"];
-  const filtered = usersData.filter(u => filter === "All" || u.status.charAt(0).toUpperCase() + u.status.slice(1) === filter);
+  
+  const filtered = usersData.filter(u => {
+    const matchesFilter = filter === "All" || u.status.charAt(0).toUpperCase() + u.status.slice(1) === filter;
+    const matchesSearch = u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          u.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          u.phone.includes(searchQuery);
+    return matchesFilter && matchesSearch;
+  });
 
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
-      <div className="flex gap-2 mb-5">
+      <div className="flex gap-2 mb-5 flex-wrap items-center">
         {filters.map(f => (
           <button 
             key={f} 
@@ -20,8 +31,17 @@ export default function UsersView() {
             {f}
           </button>
         ))}
-        <div className="ml-auto">
-          <button className="bg-brand-red border-none rounded-lg px-4 py-2 text-white text-xs font-bold cursor-pointer font-sans shadow-[0_4px_12px_rgba(255,61,61,0.3)] transition-all hover:-translate-y-0.5">+ Add User</button>
+        <div className="ml-auto relative w-full sm:w-auto mt-3 sm:mt-0">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-brand-gray-600">
+            <Icon name="search" size={14} color="#888" />
+          </div>
+          <input 
+            type="text" 
+            placeholder="Search users..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full sm:w-64 bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs text-white placeholder-brand-gray-600 focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-white/10 transition-all font-sans"
+          />
         </div>
       </div>
       
@@ -38,8 +58,11 @@ export default function UsersView() {
             <div key={i} className="grid items-center py-3.5 px-5 transition-colors duration-150 border-b border-white/5 hover:bg-white/5 grid-cols-[80px_1.5fr_1.5fr_100px_90px_100px_100px_80px] gap-3 last:border-none">
               <div className="text-xs text-brand-gray-600 font-mono">{u.id}</div>
               
-              <div>
-                <div className="text-sm font-semibold text-white mb-0.5">{u.name}</div>
+              <div 
+                className="cursor-pointer group"
+                onClick={() => setSelectedUser(u)}
+              >
+                <div className="text-sm font-semibold text-white mb-0.5 group-hover:text-[#ff3d3d] transition-colors hover:underline">{u.name}</div>
                 <div className="text-xs text-brand-gray-600">{u.email}</div>
               </div>
               
@@ -65,9 +88,6 @@ export default function UsersView() {
               </div>
               
               <div className="flex gap-2">
-                <button className="py-1.5 px-2 rounded-lg border-none cursor-pointer transition-all duration-150 bg-blue-500/10 text-blue-400 border border-blue-500/20 hover:bg-blue-500/20">
-                  <Icon name="eye" size={13} color="#2196F3" />
-                </button>
                 <button className="py-1.5 px-2 rounded-lg border-none cursor-pointer transition-all duration-150 bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20">
                   <Icon name="delete" size={13} color="#ff3d3d" />
                 </button>
@@ -76,6 +96,7 @@ export default function UsersView() {
           );
         })}
       </div>
+      {selectedUser && <UserCard user={selectedUser} onClose={() => setSelectedUser(null)} />}
     </div>
   );
 }
