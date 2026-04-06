@@ -36,14 +36,14 @@ export default function BookingCard({ booking, onClose }) {
           <div className="bg-white/5 p-4 rounded-xl border border-white/5 relative overflow-hidden">
             <div className="absolute top-0 left-0 w-1 h-full bg-brand-red/80"></div>
             <div className="text-[10px] text-[#888] uppercase font-bold mb-1 tracking-wider pl-2">Platform Fee</div>
-            <div className="text-xl text-brand-red font-bold tracking-tight pl-2">₹{booking.commission || 0}</div>
+            <div className="text-xl text-brand-red font-bold tracking-tight pl-2">₹{booking.fee || 0}</div>
           </div>
         </div>
 
         <div className="space-y-4 pt-4 border-t border-white/10">
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Customer</span>
-            <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded text-xs">{booking.user}</span>
+            <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded text-xs">{booking.customer}</span>
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Phone</span>
