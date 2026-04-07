@@ -9,9 +9,10 @@ import SettingsView from '../components/views/SettingsView';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import Login from './Login';
+import { isAdminAuthenticated, adminLogout } from '../services/authApi';
 
 export default function KeplixAdmin() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => isAdminAuthenticated());
   const [activeNav, setActiveNav] = useState('dashboard');
   const [bookingFilter, setBookingFilter] = useState('All');
   const [vendorFilter, setVendorFilter] = useState('All');
@@ -22,12 +23,24 @@ export default function KeplixAdmin() {
     return () => clearInterval(t);
   }, []);
 
-  // if (!isAuthenticated) return <Login onLogin={() => setIsAuthenticated(true)} />;
+  const handleLogout = () => {
+    adminLogout();
+    setIsAuthenticated(false);
+  };
+
+  const handleLogin = (userData) => {
+    console.log('User logged in:', userData);
+    setIsAuthenticated(true);
+  };
+
+  if (!isAuthenticated) {
+    return <Login onLogin={handleLogin} />;
+  }
 
   return (
     <div className="flex h-screen bg-brand-black font-sans overflow-hidden text-white">
       {/* -- SIDEBAR -- */}
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} onLogout={() => setIsAuthenticated(false)} />
+      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} onLogout={handleLogout} />
 
       {/* -- MAIN -- */}
       <div className="flex-1 flex flex-col overflow-hidden">
