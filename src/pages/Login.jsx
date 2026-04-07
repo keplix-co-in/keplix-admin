@@ -1,18 +1,29 @@
 import { useState } from 'react';
+import { adminLogin } from '../services/authApi';
 import { Icon } from '../components/ui/Icon';
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    // Dummy authentication
-    if (email === 'admin@keplix.com' && password === 'admin') {
-      onLogin();
-    } else {
-      setError('Invalid email or password');
+    setError('');
+    setLoading(true);
+
+    try {
+      console.log('🔐 Attempting login with:', email);
+      const response = await adminLogin(email, password);
+      
+      console.log('✅ Login successful, calling onLogin callback');
+      onLogin(response.user);
+    } catch (err) {
+      console.error('❌ Login failed:', err);
+      setError(err.message || 'Login failed. Please check your credentials.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -81,9 +92,17 @@ export default function Login({ onLogin }) {
 
           <button
             type="submit"
-            className="w-full bg-brand-red hover:bg-[#ff5252] text-white font-bold text-sm py-3.5 px-4 rounded-xl transition-all duration-200 mt-4 shadow-[0_4px_15px_rgba(255,61,61,0.3)] hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)]"
+            disabled={loading}
+            className="w-full bg-brand-red hover:bg-[#ff5252] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 px-4 rounded-xl transition-all duration-200 mt-4 shadow-[0_4px_15px_rgba(255,61,61,0.3)] hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)] flex items-center justify-center gap-2"
           >
-            Sign In
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <span>Signing in...</span>
+              </>
+            ) : (
+              'Sign In'
+            )}
           </button>
         </form>
         
