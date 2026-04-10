@@ -55,7 +55,7 @@ export default function BookingCard({ booking, onClose }) {
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Service</span>
-            <span className="text-brand-gray-700 font-medium bg-white/5 px-2 py-0.5 rounded text-xs max-w-[200px] truncate text-right">{booking.service}</span>
+            <span className="text-brand-gray-700 font-medium bg-white/5 px-2 py-0.5 rounded text-xs max-w-50 truncate text-right">{booking.service}</span>
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Time Slot</span>

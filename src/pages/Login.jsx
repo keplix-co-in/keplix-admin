@@ -33,7 +33,7 @@ export default function Login({ onLogin }) {
       <div className="absolute top-[-10%] left-[-10%] w-[40vw] h-[40vw] rounded-full bg-brand-red/5 blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40vw] h-[40vw] rounded-full bg-brand-gray-300/50 blur-[100px] pointer-events-none" />
 
-      <div className="w-full max-w-md bg-[rgba(255,255,255,0.02)] border border-white/5 p-8 rounded-[24px] shadow-[0_20px_40px_rgba(0,0,0,0.5)] backdrop-blur-md relative z-10 animate-[fadeInUp_0.4s_ease_forwards]">
+      <div className="w-full max-w-md bg-[rgba(255,255,255,0.02)] border border-white/5 p-8 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] backdrop-blur-md relative z-10 animate-[fadeInUp_0.4s_ease_forwards]">
         
         <div className="flex flex-col items-center mb-8">
           <div className="w-16 h-16 bg-[rgba(255,61,61,0.08)] border border-[rgba(255,61,61,0.15)] rounded-2xl flex items-center justify-center mb-4 shadow-[inset_0_2px_10px_rgba(255,61,61,0.1)]">
@@ -65,7 +65,7 @@ export default function Login({ onLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@keplix.com"
-                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-[rgba(255,255,255,0.05)] transition-all"
+                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-brand-gray-400 transition-all"
                 required
               />
             </div>
@@ -84,7 +84,7 @@ export default function Login({ onLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-[rgba(255,255,255,0.05)] transition-all tracking-[4px]"
+                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-brand-gray-400 transition-all tracking-[4px]"
                 required
               />
             </div>
