@@ -32,11 +32,11 @@ export default function KeplixAdmin() {
     console.log('User logged in:', userData);
     setIsAuthenticated(true);
   };
-{/** 
+
   if (!isAuthenticated) {
     return <Login onLogin={handleLogin} />;
   }
-*/}
+
   return (
     <div className="flex h-screen bg-brand-black font-sans overflow-hidden text-white">
       {/* -- SIDEBAR -- */}

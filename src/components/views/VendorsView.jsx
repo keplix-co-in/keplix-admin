@@ -1,24 +1,74 @@
-import { useState } from 'react';
-import { vendors } from "../../data";
+import { useState, useEffect } from 'react';
 import { vendorStatusConfig } from "../../data/config";
+import { getVendors } from "../../services/vendorsApi";
 import { Icon } from "../ui/Icon";
 import VendorCard from "../Cards/VendorCard";
 
 export default function VendorsView({ filter, setFilter }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVendor, setSelectedVendor] = useState(null);
-  const filters = ["All", "Active", "Pending", "Suspended"];
-  
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const filters = ["All", "Active", "Pending", "Suspended", "Uninstalled"];
+
+  const keyMap = {
+    "All": "all",
+    "Active": "active",
+    "Pending": "pending",
+    "Suspended": "suspended",
+    "Uninstalled": "uninstalled"
+  };
+
+  useEffect(() => {
+    fetchVendors();
+  }, [filter, page]);
+
+  const fetchVendors = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const filterType = keyMap[filter] || "all";
+      const data = await getVendors(filterType, page, 10);
+      
+      const formattedVendors = Array.isArray(data) ? data.map(v => ({
+        id: String(v.id || ""),
+        name: v.vendor || "N/A",
+        owner: "", 
+        verified: "basic", 
+        category: v.category || "N/A",
+        city: v.city || "N/A",
+        bookings: v.bookings || 0,
+        rating: v.rating || 0,
+        status: v.status || "pending",
+        earnings: v.totalEarnings || 0
+      })) : [];
+
+      setVendors(formattedVendors);
+      setTotalCount(formattedVendors.length);
+    } catch (err) {
+      console.error('Error fetching vendors:', err);
+      setError(err.message || 'Failed to load vendors');
+      setVendors([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filtered = vendors.filter(v => {
-    const matchesFilter = filter === "All" || v.status.charAt(0).toUpperCase() + v.status.slice(1) === filter;
-    const matchesSearch = v.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          v.owner.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          v.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          v.city.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesFilter && matchesSearch;
+    const search = (searchQuery || "").toLowerCase();
+    const matchesSearch = 
+      (v.name || "").toLowerCase().includes(search) || 
+      String(v.id || "").toLowerCase().includes(search) ||
+      (v.city || "").toLowerCase().includes(search);
+    return matchesSearch;
   });
 
-  const verifiedLabel = { field: "Field ✓", premium: "Premium ⭐", basic: "Basic", none: "Unverified" };
+  const verifiedLabel = { field: "Field \u2713", premium: "Premium \u2605", basic: "Basic", none: "Unverified" };
   const verifiedColor = { field: "#2196F3", premium: "#ff9944", basic: "#4CAF50", none: "rgba(255,255,255,0.2)" };
 
   return (
@@ -47,7 +97,7 @@ export default function VendorsView({ filter, setFilter }) {
           ))}
         </div>
         {filtered.map((v, i) => {
-          const sc = vendorStatusConfig[v.status];
+          const sc = vendorStatusConfig[v.status] || { label: v.status || "Unknown", color: '#fff', bg: '#222', border: 'rgba(255,255,255,0.1)' };
           return (
             <div key={i} className="grid items-center py-3 px-4 rounded-lg transition-colors duration-150 border-b border-white/5 hover:bg-white/5 grid-cols-[60px_1.5fr_110px_100px_80px_80px_80px_100px_80px] gap-2">
               <div className="text-xs text-brand-gray-600 font-mono">{v.id}</div>
