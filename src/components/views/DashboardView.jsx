@@ -2,6 +2,7 @@ import {
   AreaChart, Area, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell
 } from "recharts";
+import { useState, useEffect } from "react";
 import { revenueData, cityData, serviceData } from "../../data";
 import { pendingActions, kpis } from "../../data/DashBoardMock";
 
@@ -20,12 +21,51 @@ const ChartTooltip = ({ active, payload, label }) => {
 };
 
 export default function DashboardView() {
+  const [metrics, setMetrics] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const token = localStorage.getItem('adminToken');
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        
+        const response = await fetch(`${API_URL}/admin/dashboard/metrics`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          setMetrics(data);
+        }
+      } catch (error) {
+        console.error("Failed to fetch dashboard metrics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchDashboardData();
+  }, []);
+
+  const liveKpis = metrics ? [
+    { label: "Today's GMV", value: `₹${(metrics.todayGMV || 0).toLocaleString("en-IN")}`, icon: "💰", delta: "Live", color: "#10b981" },
+    { label: "Platform Revenue", value: `₹${(metrics.platformRevenue || 0).toLocaleString("en-IN")}`, icon: "📈", delta: "Live", color: "#10b981" },
+    { label: "Bookings Today", value: metrics.bookingsToday || 0, icon: "📦", delta: "Live", color: "#3b82f6" },
+    { label: "Active Vendors", value: metrics.activeVendors || 0, icon: "🏪", delta: "Live", color: "#8b5cf6" },
+    { label: "New Users Today", value: metrics.newUsersToday || 0, icon: "👥", delta: "Live", color: "#6366f1" },
+    { label: "Pending Payouts", value: `₹${(metrics.pendingPayouts || 0).toLocaleString("en-IN")}`, icon: "⏳", delta: "Action", color: "#ff3d3d", alert: true }
+  ] : kpis;
+
+  if (loading) {
+    return <div className="text-brand-gray-700 p-6 animate-pulse font-semibold">Loading Live Dashboard Metrics...</div>;
+  }
  
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       {/* KPIs */}
       <div className="grid grid-cols-6 gap-3.5 mb-6">
-        {kpis.map((k, i) => (
+        {liveKpis.map((k, i) => (
           <div key={i} className={`bg-brand-gray-100 rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25 bg-linear-to-br from-[#1a0e0e] to-brand-gray-100' : ''}`}>
             {k.alert && <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-brand-red to-[#ff6b00]" />}
             <div className="flex items-center justify-between mb-3">
