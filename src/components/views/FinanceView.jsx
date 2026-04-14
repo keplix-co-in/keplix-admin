@@ -1,37 +1,87 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { payoutQueue as initialPayoutQueue } from "../../data";
 
 export default function FinanceView() {
-  const [payoutQueue, setPayoutQueue] = useState(initialPayoutQueue);
+  const [payoutQueue, setPayoutQueue] = useState([]);
+  const [kpis, setKpis] = useState(null);
   const [loadingPayout, setLoadingPayout] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Add fetch for actual payouts
+  useEffect(() => {
+    fetchPayouts();
+    fetchKpis();
+  }, []);
+
+  const fetchKpis = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_URL}/admin/finance/kpis`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setKpis(data);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchPayouts = async () => {
+    try {
+      const token = localStorage.getItem('adminToken');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${API_URL}/admin/finance/payouts`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+          // Transform the backend data into the queue format
+          const formatted = data.map(item => ({
+            id: item.id.toString(),
+            paymentId: item.id,
+            vendor: item.booking?.service?.vendor?.vendorProfile?.business_name || `Unknown Vendor`,
+            booking: `#BK${item.booking?.id || 'N/A'} - ${item.booking?.service?.name || 'Service'}`,
+            city: item.booking?.service?.vendor?.vendorProfile?.city || '-',
+            amount: parseFloat(item.vendorAmount || 0),
+            hoursLeft: Math.max(0, 72 - Math.floor((Date.now() - new Date(item.createdAt)) / 3600000)),
+            status: "due_soon" // calculate based on hour if needed
+          }));
+        setPayoutQueue(formatted);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePayNow = async (payout) => {
     setLoadingPayout(payout.id);
     try {
-      // API call to Backend's payoutController
-      const response = await fetch("http://localhost:5000/service_api/admin/vendor/payout", {
+      const token = localStorage.getItem('adminToken');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
-          // Authorization: "Bearer <ADMIN_TOKEN>"
-        },
-        body: JSON.stringify({ paymentId: payout.paymentId || parseInt(payout.id.replace(/\D/g, ""), 10) }) // Mock mapping
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        }
       });
 
       const data = await response.json();
 
-      if (response.ok || data.success || !response.ok) {
-        // Since we are mocking for display if backend is offline, remove from queue
-        // In real app, only remove if success
-        alert(`Payout Processed for ${payout.vendor}. Amount: ₹${payout.amount}`);
-        setPayoutQueue(q => q.filter(p => p.id !== payout.id));
+      if (response.ok || data.success) {
+        alert(`Payout Processed!`);
+        fetchPayouts(); // refresh queue
       } else {
-        alert("Failed: " + data.message);
+        alert("Failed to settle payout: " + (data.message || "Unknown error"));
       }
     } catch (error) {
       console.error("Payout error:", error);
-      alert(`Payout Processed for ${payout.vendor}. Amount: ₹${payout.amount} (Offline Mock)`);
-      setPayoutQueue(q => q.filter(p => p.id !== payout.id));
+      alert("Failed due to a network or server error.");
     } finally {
       setLoadingPayout(null);
     }
@@ -49,13 +99,15 @@ export default function FinanceView() {
     normal:   { color: "#4CAF50", bg: "rgba(76,175,80,0.06)",  label: "NORMAL" },
   };
 
+  const formatInr = (val) => new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val || 0);
+
   const financeKpis = [
-    { label: "Total Collected (Escrow)", value: "₹4,52,800", icon: "🏦", color: "#2196F3" },
-    { label: "Disbursed to Vendors",     value: "₹3,87,200", icon: "📤", color: "#4CAF50" },
-    { label: "Platform Commission",      value: "₹65,600",   icon: "💎", color: "#ff3d3d" },
-    { label: "Pending Disbursement",     value: "₹9,333",    icon: "⏳", color: "#ff3d3d", alert: true },
-    { label: "Refunds Issued",           value: "₹6,200",    icon: "↩️", color: "#9C27B0" },
-    { label: "Failed Payouts",           value: "₹1,100",    icon: "❌", color: "#ff3d3d", alert: true },
+    { label: "Total Collected (Escrow)", value: formatInr(kpis?.totalCollected), icon: "🏦", color: "#2196F3" },
+    { label: "Disbursed to Vendors",     value: formatInr(kpis?.disbursed), icon: "📤", color: "#4CAF50" },
+    { label: "Platform Commission",      value: formatInr(kpis?.commission), icon: "💎", color: "#ff3d3d" },
+    { label: "Pending Disbursement",     value: formatInr(kpis?.pending), icon: "⏳", color: "#ff3d3d", alert: true },
+    { label: "Refunds Issued",           value: formatInr(kpis?.refunds), icon: "↩️", color: "#9C27B0" },
+    { label: "Failed Payouts",           value: formatInr(kpis?.failed), icon: "❌", color: "#ff3d3d", alert: true },
   ];
 
   return (
@@ -116,9 +168,14 @@ export default function FinanceView() {
             <div key={h} className="text-[10px] font-bold text-brand-gray-600 uppercase tracking-wider">{h}</div>
           ))}
         </div>
-        {payoutQueue.map((p, i) => {
-          const cfg = urgencyConfig[p.status];
-          return (
+        {loading ? (
+          <div className="py-6 text-center text-sm text-brand-gray-700">Loading payout queue...</div>
+        ) : payoutQueue.length === 0 ? (
+          <div className="py-6 text-center text-sm text-brand-gray-700">No pending payouts 🎉</div>
+        ) : (
+          payoutQueue.map((p, i) => {
+            const cfg = urgencyConfig[p.status] || urgencyConfig.normal;
+            return (
             <div key={i} className="grid gap-2 items-center py-3.5 px-5 border-b border-white/5 transition-colors duration-150 hover:bg-white/5 grid-cols-[80px_1fr_100px_100px_100px_80px_80px]">
               <div className="text-xs text-brand-gray-700 font-mono">{p.id}</div>
               <div className="text-sm font-semibold text-white">{p.vendor}</div>
@@ -140,7 +197,8 @@ export default function FinanceView() {
               </button>
             </div>
           );
-        })}
+        })
+      )}
       </div>
     </div>
   );
