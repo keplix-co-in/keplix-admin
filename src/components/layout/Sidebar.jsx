@@ -1,5 +1,5 @@
 import { Icon } from "../ui/Icon";
-import navItems from "../../data/Sidebarmock";
+import navItems from "../../data/SidebarMock";
 
 export function Sidebar({ activeNav, setActiveNav, onLogout }) {
   
