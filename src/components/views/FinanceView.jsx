@@ -114,7 +114,7 @@ export default function FinanceView() {
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       <div className="grid grid-cols-6 gap-3.5 mb-6">
         {financeKpis.map((k, i) => (
-          <div key={i} className={`bg-[#141420] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
+          <div key={i} className={`bg-brand-gray-100] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
             <div className="text-xl mb-2.5">{k.icon}</div>
             <div className="font-syne text-lg font-extrabold text-white mb-1">{k.value}</div>
             <div className="text-xs text-brand-gray-700">{k.label}</div>
@@ -123,7 +123,7 @@ export default function FinanceView() {
       </div>
 
       {/* Cash Flow Diagram */}
-      <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden mb-5 p-6">
+      <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden mb-5 p-6">
         <div className="font-syne text-base font-bold mb-5">💸 Cash Flow Pipeline</div>
         <div className="flex items-center">
           {[
@@ -134,7 +134,7 @@ export default function FinanceView() {
             { label: "Vendor Payout",    sublabel: "Within 72 hours",       icon: "🏪", color: "#ff9944", amount: "₹850" },
           ].map((step, i, arr) => (
             <div key={i} className={`flex items-center ${i < arr.length - 1 ? 'flex-1' : ''}`}>
-              <div className="bg-[#1c1c28] border rounded-xl p-3.5 text-center min-w-[110px]" style={{borderColor: `${step.color}30`}}>
+              <div className="bg-[#1c1c28] border rounded-xl p-3.5 text-center min-w-27.5" style={{borderColor: `${step.color}30`}}>
                 <div className="text-2xl mb-1.5">{step.icon}</div>
                 <div className="text-xs font-bold text-white mb-0.5">{step.label}</div>
                 <div className={`text-[10px] text-brand-gray-700 ${step.amount ? 'mb-1.5' : ''}`}>{step.sublabel}</div>
@@ -152,7 +152,7 @@ export default function FinanceView() {
       </div>
 
       {/* Payout Queue */}
-      <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+      <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
         <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
           <span className="font-syne text-base font-bold">⏳ Payout Queue</span>
           <button 

@@ -105,7 +105,7 @@ export default function VendorsView({ filter, setFilter }) {
                 className="cursor-pointer group"
                 onClick={() => setSelectedVendor(v)}
               >
-                <div className="text-sm font-semibold text-white mb-0.5 group-hover:text-[#ff3d3d] transition-colors hover:underline">{v.name}</div>
+                <div className="text-sm font-semibold text-white mb-0.5 group-hover:text-brand-red transition-colors hover:underline">{v.name}</div>
                 <div className="flex items-center gap-1.5">
                   <span className="text-xs text-brand-gray-700">{v.owner}</span>
                   <span className="text-[9px] font-bold px-1.5 py-px rounded-full" style={{color: verifiedColor[v.verified], background: `${verifiedColor[v.verified]}18`}}>{verifiedLabel[v.verified]}</span>
@@ -117,7 +117,7 @@ export default function VendorsView({ filter, setFilter }) {
               <div className={`text-sm font-bold ${v.rating >= 4.5 ? "text-green-500" : v.rating >= 3 ? "text-yellow-400" : "text-brand-red"}`}>
                 {v.rating > 0 ? `${v.rating} ★` : "—"}
               </div>
-              <div><span className="inline-flex items-center py-[3px] px-2.5 rounded-full text-[10px] font-bold tracking-[0.3px] border" style={{ color: sc.color, background: sc.bg, borderColor: sc.border }}>{sc.label}</span></div>
+              <div><span className="inline-flex items-center py-0.75 px-2.5 rounded-full text-[10px] font-bold tracking-[0.3px] border" style={{ color: sc.color, background: sc.bg, borderColor: sc.border }}>{sc.label}</span></div>
               <div className="font-syne text-sm font-extrabold text-white">
                 {v.earnings > 0 ? `₹${(v.earnings/1000).toFixed(0)}k` : "—"}
               </div>

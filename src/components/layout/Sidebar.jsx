@@ -4,7 +4,7 @@ import navItems from "../../data/SidebarMock";
 export function Sidebar({ activeNav, setActiveNav, onLogout }) {
   
   return (
-    <div className="w-[220px] bg-[#0e0e18] border-r border-brand-gray-400 flex flex-col p-6 shrink-0">
+    <div className="w-55 bg-[#0e0e18] border-r border-brand-gray-400 flex flex-col p-6 shrink-0">
       {/* Logo */}
       <div className="px-2 pb-7 border-b border-brand-gray-400 mb-5">
         <div className="flex items-center gap-2.5">
