@@ -81,7 +81,7 @@ export default function DashboardView() {
       {/* Charts Row */}
       <div className="grid grid-cols-[1fr_340px] gap-4 mb-5">
         {/* Revenue Chart */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">Revenue vs GMV — Last 7 Days</span>
             <div className="flex gap-4">
@@ -117,7 +117,7 @@ export default function DashboardView() {
         </div>
 
         {/* Pending Actions */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">⚡ Pending Actions</span>
             <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">5 items</span>
@@ -139,7 +139,7 @@ export default function DashboardView() {
       {/* Bottom Row */}
       <div className="grid grid-cols-2 gap-4">
         {/* City Performance */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">Top Cities</span>
           </div>
@@ -162,7 +162,7 @@ export default function DashboardView() {
         </div>
 
         {/* Service Mix */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">Service Mix</span>
           </div>
