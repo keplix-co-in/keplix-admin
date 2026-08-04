@@ -5,6 +5,7 @@ import {
 import { useState, useEffect } from "react";
 import { revenueData, cityData, serviceData } from "../../data";
 import { pendingActions, kpis } from "../../data/DashBoardMock";
+import { API_URL } from "../../services/apiConfig.js";
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -28,8 +29,7 @@ export default function DashboardView() {
     const fetchDashboardData = async () => {
       try {
         const token = localStorage.getItem('adminToken');
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        
+
         const response = await fetch(`${API_URL}/admin/dashboard/metrics`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });

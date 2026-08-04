@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { payoutQueue as initialPayoutQueue } from "../../data";
+import { API_URL } from "../../services/apiConfig.js";
 
 export default function FinanceView() {
   const [payoutQueue, setPayoutQueue] = useState([]);
@@ -16,7 +17,6 @@ export default function FinanceView() {
   const fetchKpis = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const res = await fetch(`${API_URL}/admin/finance/kpis`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -32,7 +32,6 @@ export default function FinanceView() {
   const fetchPayouts = async () => {
     try {
       const token = localStorage.getItem('adminToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const res = await fetch(`${API_URL}/admin/finance/payouts`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -62,7 +61,6 @@ export default function FinanceView() {
     setLoadingPayout(payout.id);
     try {
       const token = localStorage.getItem('adminToken');
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await fetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
         method: "POST",
         headers: {
@@ -88,8 +86,40 @@ export default function FinanceView() {
   };
 
   const handleInitiateAll = async () => {
-    alert("Initiating all payouts. This will sequentially call the payout API for each pending payout.");
-    setPayoutQueue([]);
+    if (payoutQueue.length === 0) return;
+    if (!confirm(`Initiate ${payoutQueue.length} payout(s)? This will sequentially call the payout API for each pending payout.`)) {
+      return;
+    }
+
+    const queue = payoutQueue;
+    let succeeded = 0;
+    let failed = 0;
+
+    for (const payout of queue) {
+      try {
+        const token = localStorage.getItem('adminToken');
+        const response = await fetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${token}`
+          }
+        });
+        const data = await response.json();
+        if (response.ok || data.success) {
+          succeeded += 1;
+        } else {
+          failed += 1;
+        }
+      } catch (err) {
+        console.error("Payout error for", payout.id, err);
+        failed += 1;
+      }
+    }
+
+    alert(`Initiated all payouts: ${succeeded} succeeded, ${failed} failed.`);
+    fetchPayouts(); // refresh queue to reflect actual server state
+    fetchKpis();
   };
 
   const urgencyConfig = {
@@ -105,7 +135,7 @@ export default function FinanceView() {
     { label: "Total Collected (Escrow)", value: formatInr(kpis?.totalCollected), icon: "🏦", color: "#2196F3" },
     { label: "Disbursed to Vendors",     value: formatInr(kpis?.disbursed), icon: "📤", color: "#4CAF50" },
     { label: "Platform Commission",      value: formatInr(kpis?.commission), icon: "💎", color: "#ff3d3d" },
-    { label: "Pending Disbursement",     value: formatInr(kpis?.pending), icon: "⏳", color: "#ff3d3d", alert: true },
+    { label: "Pending Disbursement",     value: formatInr(kpis?.pendingDisbursement), icon: "⏳", color: "#ff3d3d", alert: true },
     { label: "Refunds Issued",           value: formatInr(kpis?.refunds), icon: "↩️", color: "#9C27B0" },
     { label: "Failed Payouts",           value: formatInr(kpis?.failed), icon: "❌", color: "#ff3d3d", alert: true },
   ];

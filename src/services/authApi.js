@@ -3,7 +3,7 @@
  * Handles admin login and authentication
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_URL } from './apiConfig.js';
 
 /**
  * Login admin user
@@ -12,8 +12,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
  */
 export const adminLogin = async (email, password) => {
   try {
-    console.log(`📡 Admin Login Request: ${API_URL}/admin/auth/login`);
-
     const response = await fetch(`${API_URL}/admin/auth/login`, {
       method: 'POST',
       headers: {
@@ -25,22 +23,20 @@ export const adminLogin = async (email, password) => {
       })
     });
 
-    console.log(`📊 Response Status: ${response.status}`);
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData?.message || `Login failed: ${response.status}`;
-      console.error(`❌ Login Error:`, errorMessage);
       throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    console.log(`✅ Login successful:`, data);
+
+    // Do not log `data` here — it contains the admin's bearer/refresh tokens
+    // in plaintext, which would otherwise land in the browser console.
 
     // Store tokens and user data
     if (data.token) {
       localStorage.setItem('adminToken', data.token);
-      console.log('✅ Admin token saved to localStorage');
     }
 
     if (data.refresh) {
@@ -53,7 +49,7 @@ export const adminLogin = async (email, password) => {
 
     return data;
   } catch (error) {
-    console.error('❌ Error during login:', error);
+    console.error('Error during login:', error.message);
     throw error;
   }
 };
@@ -88,10 +84,24 @@ export const getAdminUser = () => {
 };
 
 /**
- * Check if admin is authenticated
+ * Check if admin is authenticated. Verifies the stored token is a
+ * well-formed JWT and not expired — presence alone is not enough, since a
+ * stale or hand-edited localStorage value would otherwise render the app
+ * as "logged in" until an API call eventually 401s.
  */
 export const isAdminAuthenticated = () => {
-  return !!getAdminToken();
+  const token = getAdminToken();
+  if (!token) return false;
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return false;
+    const payload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload.exp) return true; // no expiry claim — treat presence as valid
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
 };
 
 export default {

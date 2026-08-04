@@ -3,7 +3,7 @@
  * Handles all user-related API calls for Admin
  */
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from './apiConfig.js';
 
 /**
  * Get user metrics (counts by status)
