@@ -5,6 +5,7 @@ const navItems = [
     { id: "bookings",  label: "Bookings",   icon: "bookings"  },
     { id: "analytics", label: "Analytics",  icon: "analytics" },
     { id: "users",     label: "Users",      icon: "users"     },
+    { id: "blogs",     label: "Blogs",      icon: "blogs"     },
 ];
 
 export default navItems;

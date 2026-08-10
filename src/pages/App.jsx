@@ -6,6 +6,7 @@ import BookingsView from '../components/views/BookingsView';
 import AnalyticsView from '../components/views/AnalyticsView';
 import UsersView from '../components/views/UsersView';
 import SettingsView from '../components/views/SettingsView';
+import BlogsView from '../components/views/BlogsView';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import Login from './Login';
@@ -55,6 +56,7 @@ export default function KeplixAdmin() {
           {activeNav === "bookings" && <BookingsView filter={bookingFilter} setFilter={setBookingFilter} />}
           {activeNav === "analytics" && <AnalyticsView />}
           {activeNav === "users" && <UsersView />}
+          {activeNav === "blogs" && <BlogsView />}
           {activeNav === "settings" && <SettingsView />}
         </div>
       </div>
