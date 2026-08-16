@@ -138,7 +138,13 @@ export default function BookingsView({ filter, setFilter }) {
         </div>
       )}
 
-      {selectedBooking && <BookingCard booking={selectedBooking} onClose={() => setSelectedBooking(null)} />}
+      {selectedBooking && (
+        <BookingCard
+          booking={selectedBooking}
+          onClose={() => setSelectedBooking(null)}
+          onForceCompleted={fetchBookings}
+        />
+      )}
     </div>
   );
 }

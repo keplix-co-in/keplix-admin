@@ -172,10 +172,45 @@ export const cancelBooking = async (bookingId, reason = '') => {
   }
 };
 
+/**
+ * Force-complete a booking without a submitted health sheet — the
+ * escape hatch if the mandatory-inspection gate misfires. Does NOT release
+ * escrow itself (that only happens on the customer's own confirmation); it
+ * only unblocks the booking's status. See the backend controller for the
+ * full safety-boundary note.
+ * @param {string|number} bookingId
+ * @param {string} reason - required context for the audit log
+ */
+export const forceCompleteBooking = async (bookingId, reason) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+
+    const response = await fetch(`${API_URL}/admin/bookings/${bookingId}/force-complete`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Failed to force-complete booking: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error force-completing booking:', error);
+    throw error;
+  }
+};
+
 export default {
   getBookingMetrics,
   getBookings,
   getBookingById,
   updateBookingStatus,
-  cancelBooking
+  cancelBooking,
+  forceCompleteBooking
 };
