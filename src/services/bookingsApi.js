@@ -3,7 +3,7 @@
  * Handles all booking-related API calls
  */
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from './apiConfig.js';
 
 /**
  * Get booking metrics (counts by status)
@@ -42,21 +42,8 @@ export const getBookings = async (type = 'all', page = 1, limit = 10) => {
     const token = localStorage.getItem('adminToken');
     
     if (!token) {
-      console.warn('⚠️ No admin token found in localStorage');
-      // Return mock data for testing
-      return [
-        {
-          id: 'TEST-001',
-          customer: 'Test Customer',
-          phone: '+919999999999',
-          vendor: 'Test Vendor',
-          service: 'Test Service',
-          slot: '2024-04-06 10:00 AM',
-          amount: 500,
-          fee: 50,
-          status: 'confirmed'
-        }
-      ];
+      console.warn('No admin token found in localStorage');
+      return [];
     }
 
     const filterType = type || 'all';
@@ -67,7 +54,6 @@ export const getBookings = async (type = 'all', page = 1, limit = 10) => {
     });
 
     const url = `${API_URL}/admin/bookings?${queryParams}`;
-    console.log(`📡 API Request: ${url}`);
 
     const response = await fetch(url, {
       method: 'GET',
@@ -77,28 +63,27 @@ export const getBookings = async (type = 'all', page = 1, limit = 10) => {
       }
     });
 
-    console.log(`📊 Response Status: ${response.status}`);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.error(`❌ API Error: ${response.status}`, errorText);
-      
-      // Return empty array instead of throwing
+      console.error(`API Error: ${response.status}`, errorText);
+
+      // 401 degrades to an empty list (session issue, not a data error);
+      // everything else propagates so the caller's error banner fires.
       if (response.status === 401) {
-        console.log('🔑 Authentication failed - returning empty array');
         return [];
       }
-      
+
       throw new Error(`API Error: ${response.status}`);
     }
 
     const data = await response.json();
-    console.log(`✅ Bookings loaded (${data?.length || 0} items):`, data);
     return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error('❌ Error fetching bookings:', error);
-    // Return empty array on error instead of throwing
-    return [];
+    console.error('Error fetching bookings:', error);
+    // Only 401 (handled above) degrades to []; other failures (network,
+    // 500, parse errors) must propagate so the view's error banner fires
+    // instead of silently rendering "no bookings found".
+    throw error;
   }
 };
 
@@ -187,10 +172,45 @@ export const cancelBooking = async (bookingId, reason = '') => {
   }
 };
 
+/**
+ * Force-complete a booking without a submitted health sheet — the
+ * escape hatch if the mandatory-inspection gate misfires. Does NOT release
+ * escrow itself (that only happens on the customer's own confirmation); it
+ * only unblocks the booking's status. See the backend controller for the
+ * full safety-boundary note.
+ * @param {string|number} bookingId
+ * @param {string} reason - required context for the audit log
+ */
+export const forceCompleteBooking = async (bookingId, reason) => {
+  try {
+    const token = localStorage.getItem('adminToken');
+
+    const response = await fetch(`${API_URL}/admin/bookings/${bookingId}/force-complete`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ reason })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Failed to force-complete booking: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error force-completing booking:', error);
+    throw error;
+  }
+};
+
 export default {
   getBookingMetrics,
   getBookings,
   getBookingById,
   updateBookingStatus,
-  cancelBooking
+  cancelBooking,
+  forceCompleteBooking
 };

@@ -1,9 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { bookingStatusConfig } from "../../data/config";
+import { forceCompleteBooking } from "../../services/bookingsApi";
 
-export default function BookingCard({ booking, onClose }) {
+export default function BookingCard({ booking, onClose, onForceCompleted }) {
+  const [forcing, setForcing] = useState(false);
+  const [forceError, setForceError] = useState('');
+
   if (!booking) return null;
   const sc = bookingStatusConfig[booking.status] || { label: booking.status.charAt(0).toUpperCase() + booking.status.slice(1), color: '#fff', bg: '#222', border: 'rgba(255,255,255,0.1)' };
+
+  const handleForceComplete = async () => {
+    // window.prompt/confirm match this app's existing convention (see
+    // BlogsView.jsx's delete confirmation) rather than a full dialog
+    // component — this is a rare admin escape hatch, not everyday UI.
+    const reason = window.prompt(
+      'Force-completing bypasses the mandatory health-sheet check. This does NOT release escrow by itself. Enter a reason for the audit log:',
+    );
+    if (reason === null) return; // cancelled
+    if (!reason.trim()) {
+      setForceError('A reason is required.');
+      return;
+    }
+
+    setForcing(true);
+    setForceError('');
+    try {
+      await forceCompleteBooking(booking.id, reason.trim());
+      onForceCompleted?.();
+      onClose();
+    } catch (err) {
+      setForceError(err.message || 'Failed to force-complete this booking.');
+    } finally {
+      setForcing(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease_forwards]">
@@ -62,6 +92,21 @@ export default function BookingCard({ booking, onClose }) {
             <span className="text-brand-gray-700 font-medium bg-white/5 px-2 py-0.5 rounded text-[10px]">{booking.slot}</span>
           </div>
         </div>
+
+        {booking.status !== 'completed' && (
+          <div className="mt-6 pt-4 border-t border-white/10">
+            {forceError && (
+              <p className="text-xs text-red-300 mb-2">{forceError}</p>
+            )}
+            <button
+              onClick={handleForceComplete}
+              disabled={forcing}
+              className="w-full py-2.5 rounded-lg text-xs font-bold text-amber-300 bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 disabled:opacity-50 transition-colors"
+            >
+              {forcing ? 'Force-completing…' : 'Force Complete (bypass health-sheet check)'}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

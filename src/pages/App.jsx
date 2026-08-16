@@ -6,6 +6,10 @@ import BookingsView from '../components/views/BookingsView';
 import AnalyticsView from '../components/views/AnalyticsView';
 import UsersView from '../components/views/UsersView';
 import SettingsView from '../components/views/SettingsView';
+import BlogsView from '../components/views/BlogsView';
+import WalkInJobsView from '../components/views/WalkInJobsView';
+import HealthComponentsView from '../components/views/HealthComponentsView';
+import OffersView from '../components/views/OffersView';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import Login from './Login';
@@ -53,8 +57,12 @@ export default function KeplixAdmin() {
           {activeNav === "finance" && <FinanceView />}
           {activeNav === "vendors" && <VendorsView filter={vendorFilter} setFilter={setVendorFilter} />}
           {activeNav === "bookings" && <BookingsView filter={bookingFilter} setFilter={setBookingFilter} />}
+          {activeNav === "walkins" && <WalkInJobsView />}
+          {activeNav === "health-components" && <HealthComponentsView />}
+          {activeNav === "offers" && <OffersView />}
           {activeNav === "analytics" && <AnalyticsView />}
           {activeNav === "users" && <UsersView />}
+          {activeNav === "blogs" && <BlogsView />}
           {activeNav === "settings" && <SettingsView />}
         </div>
       </div>

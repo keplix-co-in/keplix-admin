@@ -10,6 +10,7 @@ export function Topbar({ time, activeNav }) {
     { id: 'bookings',  label: 'Bookings'  },
     { id: 'analytics', label: 'Analytics' },
     { id: 'users',     label: 'Users'     },
+    { id: 'blogs',     label: 'Blogs'     },
     { id: 'settings',  label: 'Settings'  },
   ];
 

@@ -12,6 +12,19 @@ export const vendorStatusConfig = {
   suspended: { label: "Suspended", color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",   border: "rgba(255,61,61,0.2)" },
 };
 
+export const walkInJobStatusConfig = {
+  open:        { label: "Checked in",  color: "#ff9944", bg: "rgba(255,153,68,0.1)",  border: "rgba(255,153,68,0.2)" },
+  in_progress: { label: "In Progress", color: "#2196F3", bg: "rgba(33,150,243,0.1)",  border: "rgba(33,150,243,0.2)" },
+  completed:   { label: "Completed",   color: "#4CAF50", bg: "rgba(76,175,80,0.1)",   border: "rgba(76,175,80,0.2)" },
+  cancelled:   { label: "Cancelled",   color: "#666677", bg: "rgba(100,100,120,0.1)", border: "rgba(100,100,120,0.2)" },
+};
+
+export const healthStatusConfig = {
+  GOOD:      { label: "Good",             color: "#4CAF50", bg: "rgba(76,175,80,0.1)",  border: "rgba(76,175,80,0.2)" },
+  ATTENTION: { label: "Attention needed", color: "#ff9944", bg: "rgba(255,153,68,0.1)", border: "rgba(255,153,68,0.2)" },
+  REPLACE:   { label: "Replace",          color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",  border: "rgba(255,61,61,0.2)" },
+};
+
 export const userStatusConfig = {
   active:    { label: "Active",    color: "#4CAF50", bg: "rgba(76,175,80,0.1)",   border: "rgba(76,175,80,0.2)" },
   inactive:  { label: "Inactive",  color: "#ff9944", bg: "rgba(255,153,68,0.1)",  border: "rgba(255,153,68,0.2)" },
