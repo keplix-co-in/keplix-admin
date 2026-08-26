@@ -93,7 +93,11 @@ export const refreshAdminToken = () => {
     .then(async (response) => {
       if (!response.ok) {
         // Expired, revoked, or reuse detected — none are recoverable here.
-        adminLogout();
+        // Awaited so the local session is definitely cleared before callers
+        // act on the null return. The server-side revoke call inside will most
+        // likely 401 (the token the server just rejected is the same one it
+        // sends), which adminLogout handles — local cleanup still happens.
+        await adminLogout();
         return null;
       }
       const data = await response.json();
@@ -154,14 +158,33 @@ export const authFetch = async (url, options = {}) => {
 /**
  * Logout admin user
  */
-export const adminLogout = () => {
+export const adminLogout = async () => {
+  // Revoke the refresh token SERVER-side before clearing local storage.
+  //
+  // This used to only clear localStorage. The backend's POST /admin/auth/logout
+  // (routes/Admin/authAdmin.js) sets admin.refreshToken = null, and it was
+  // never being called -- so after an admin "logged out", their refresh token
+  // remained valid on the server until it expired on its own. Anyone holding a
+  // copy of it could keep minting fresh access tokens.
+  const refreshToken = localStorage.getItem('adminRefreshToken');
+
   try {
+    if (refreshToken) {
+      await fetch(`${API_URL}/admin/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+    }
+  } catch (error) {
+    // Network failure must not trap the admin in a logged-in UI -- the local
+    // session is still cleared below. The server-side token will expire on its
+    // own schedule.
+    console.error('Server-side logout failed; clearing local session anyway:', error);
+  } finally {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminRefreshToken');
     localStorage.removeItem('adminUser');
-    console.log('✅ Admin logged out');
-  } catch (error) {
-    console.error('Error during logout:', error);
   }
 };
 

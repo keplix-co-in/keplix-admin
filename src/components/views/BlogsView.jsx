@@ -1,12 +1,30 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { getBlogPosts, deleteBlogPost } from '../../services/blogsApi.js';
 import BlogFormModal from '../Cards/BlogFormModal.jsx';
+import Badge from '../ui/Badge.jsx';
+import Button from '../ui/Button.jsx';
+import ConfirmDialog from '../ui/ConfirmDialog.jsx';
+import EmptyState from '../ui/EmptyState.jsx';
+import ErrorState from '../ui/ErrorState.jsx';
+import Spinner from '../ui/Spinner.jsx';
+import { useToast } from '../ui/toastContext.js';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'published', label: 'Published' },
   { id: 'draft', label: 'Drafts' },
 ];
+
+/**
+ * Same shape as the status configs in `src/data/config.js`, so the raw enum
+ * (`published` / `draft`) is never rendered to an operator — every other view
+ * maps its statuses to a human label, and this one used to leak the DB value.
+ */
+const postStatusConfig = {
+  published: { label: 'Published', color: '#4CAF50', bg: 'rgba(76,175,80,0.1)', border: 'rgba(76,175,80,0.2)' },
+  draft: { label: 'Draft', color: '#ff9944', bg: 'rgba(255,153,68,0.1)', border: 'rgba(255,153,68,0.2)' },
+  archived: { label: 'Archived', color: '#666677', bg: 'rgba(100,100,120,0.1)', border: 'rgba(100,100,120,0.2)' },
+};
 
 const GRID = 'grid-cols-[1.8fr_1fr_110px_150px_140px]';
 
@@ -27,6 +45,9 @@ export default function BlogsView() {
   const [error, setError] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
+  const [pendingDelete, setPendingDelete] = useState(null);
+  const [deleting, setDeleting] = useState(false);
+  const toast = useToast();
 
   const fetchPosts = useCallback(async () => {
     setLoading(true);
@@ -34,7 +55,9 @@ export default function BlogsView() {
     try {
       setPosts(await getBlogPosts({ status: filter }));
     } catch (err) {
-      setError('Failed to load posts.');
+      // Surface the actual reason -- the generic string alone made an expired
+      // session and a server outage look identical to the operator.
+      setError(err?.message ? `Failed to load posts: ${err.message}` : 'Failed to load posts.');
     } finally {
       setLoading(false);
     }
@@ -48,13 +71,18 @@ export default function BlogsView() {
     p.title.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const handleDelete = async (post) => {
-    if (!window.confirm(`Delete "${post.title}"? This cannot be undone.`)) return;
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    setDeleting(true);
     try {
-      await deleteBlogPost(post.id);
+      await deleteBlogPost(pendingDelete.id);
+      toast.success(`Deleted "${pendingDelete.title}".`);
+      setPendingDelete(null);
       fetchPosts();
     } catch (err) {
-      alert(err.message || 'Failed to delete post');
+      toast.error(err.message || 'Failed to delete post');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -73,17 +101,13 @@ export default function BlogsView() {
       <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
         <div className="flex gap-2">
           {FILTERS.map((f) => (
-            <button
+            <Button
               key={f.id}
+              variant={filter === f.id ? 'primary' : 'ghost'}
               onClick={() => setFilter(f.id)}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors ${
-                filter === f.id
-                  ? 'bg-brand-red text-white'
-                  : 'bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
-              }`}
             >
               {f.label}
-            </button>
+            </Button>
           ))}
         </div>
 
@@ -95,20 +119,11 @@ export default function BlogsView() {
             placeholder="Search posts..."
             className="bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(255,61,61,0.5)]"
           />
-          <button
-            onClick={openNew}
-            className="px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-brand-red hover:opacity-90 transition-opacity whitespace-nowrap"
-          >
-            + New post
-          </button>
+          <Button onClick={openNew}>+ New post</Button>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchPosts} className="mb-4" />}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
         <div
@@ -122,17 +137,22 @@ export default function BlogsView() {
         </div>
 
         {loading && (
-          <div className="px-5 py-10 text-center text-sm text-white/40">
-            Loading posts…
+          <div className="px-5 py-10 flex items-center justify-center gap-3 text-sm text-white/40">
+            <Spinner /> Loading posts…
           </div>
         )}
 
         {!loading && visible.length === 0 && (
-          <div className="px-5 py-10 text-center text-sm text-white/40">
-            {posts.length === 0
-              ? 'No posts yet — create your first one.'
-              : 'No posts match your search.'}
-          </div>
+          <EmptyState
+            icon="📝"
+            message={
+              posts.length === 0
+                ? 'No posts yet — create your first one.'
+                : 'No posts match your search.'
+            }
+            actionLabel={posts.length === 0 ? '+ New post' : undefined}
+            onAction={posts.length === 0 ? openNew : undefined}
+          />
         )}
 
         {!loading &&
@@ -149,36 +169,37 @@ export default function BlogsView() {
               </div>
               <div className="text-sm text-white/60 truncate">{post.category}</div>
               <div>
-                <span
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                    post.status === 'published'
-                      ? 'bg-emerald-500/15 text-emerald-300'
-                      : 'bg-white/10 text-white/50'
-                  }`}
-                >
-                  {post.status}
-                </span>
+                <Badge
+                  config={postStatusConfig[post.status]}
+                  label={postStatusConfig[post.status] ? undefined : (post.status || '—')}
+                />
               </div>
               <div className="text-sm text-white/50">
                 {formatDate(post.publishedAt)}
               </div>
               <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => openEdit(post)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 hover:text-white transition-colors"
-                >
+                <Button variant="ghost" size="sm" onClick={() => openEdit(post)}>
                   Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(post)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-red-300 bg-red-500/10 hover:bg-red-500/20 transition-colors"
-                >
+                </Button>
+                <Button variant="danger" size="sm" onClick={() => setPendingDelete(post)}>
                   Delete
-                </button>
+                </Button>
               </div>
             </div>
           ))}
       </div>
+
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete post"
+          message={`Delete "${pendingDelete.title}"? This cannot be undone.`}
+          confirmLabel="Delete"
+          danger
+          loading={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
+        />
+      )}
 
       {modalOpen && (
         <BlogFormModal
@@ -186,6 +207,7 @@ export default function BlogsView() {
           onClose={() => setModalOpen(false)}
           onSaved={() => {
             setModalOpen(false);
+            toast.success('Post saved.');
             fetchPosts();
           }}
         />

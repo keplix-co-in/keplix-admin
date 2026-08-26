@@ -4,7 +4,15 @@
  */
 
 import { API_URL } from './apiConfig.js';
+import { authFetch } from './authApi.js';
 
+// authFetch attaches/renews the bearer token automatically, but it always
+// forces Content-Type: application/json onto every request. createBlogPost
+// and updateBlogPost send FormData (so a cover image file can ride along)
+// and MUST NOT have a Content-Type header — the browser sets its own
+// multipart boundary. Those two calls stay on plain fetch with a manual
+// Authorization header for that reason; the JSON/no-body calls below use
+// authFetch.
 const authHeaders = () => ({
   Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
 });
@@ -28,9 +36,8 @@ const toFormData = (post) => {
 export const getBlogPosts = async ({ status = 'all', page = 1, limit = 50, search = '' } = {}) => {
   try {
     const qs = new URLSearchParams({ status, page, limit, search });
-    const response = await fetch(`${API_URL}/admin/blogs?${qs}`, {
+    const response = await authFetch(`${API_URL}/admin/blogs?${qs}`, {
       method: 'GET',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     });
 
     if (!response.ok) {
@@ -41,6 +48,7 @@ export const getBlogPosts = async ({ status = 'all', page = 1, limit = 50, searc
     const json = await response.json();
     return json.data ?? [];
   } catch (error) {
+    if (error.code === 'SESSION_EXPIRED') throw error;
     console.error('Failed to fetch blog posts:', error);
     return [];
   }
@@ -76,9 +84,8 @@ export const updateBlogPost = async (id, post) => {
 };
 
 export const deleteBlogPost = async (id) => {
-  const response = await fetch(`${API_URL}/admin/blogs/${id}`, {
+  const response = await authFetch(`${API_URL}/admin/blogs/${id}`, {
     method: 'DELETE',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
   });
 
   if (!response.ok) {

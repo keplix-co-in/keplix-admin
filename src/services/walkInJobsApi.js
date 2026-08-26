@@ -4,10 +4,7 @@
  */
 
 import { API_URL } from './apiConfig.js';
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
-});
+import { authFetch } from './authApi.js';
 
 export const getWalkInJobs = async ({ status = '', vendorId = '', page = 1, limit = 20 } = {}) => {
   try {
@@ -16,9 +13,8 @@ export const getWalkInJobs = async ({ status = '', vendorId = '', page = 1, limi
     if (vendorId) params.vendorId = vendorId;
     const qs = new URLSearchParams(params);
 
-    const response = await fetch(`${API_URL}/admin/walk-in-jobs?${qs}`, {
+    const response = await authFetch(`${API_URL}/admin/walk-in-jobs?${qs}`, {
       method: 'GET',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     });
     if (!response.ok) {
       console.error(`Walk-in jobs API error: ${response.status}`);
@@ -26,15 +22,15 @@ export const getWalkInJobs = async ({ status = '', vendorId = '', page = 1, limi
     }
     return response.json();
   } catch (error) {
+    if (error.code === 'SESSION_EXPIRED') throw error;
     console.error('Failed to fetch walk-in jobs:', error);
     return { data: [], total: 0 };
   }
 };
 
 export const getWalkInJob = async (id) => {
-  const response = await fetch(`${API_URL}/admin/walk-in-jobs/${id}`, {
+  const response = await authFetch(`${API_URL}/admin/walk-in-jobs/${id}`, {
     method: 'GET',
-    headers: { ...authHeaders(), 'Content-Type': 'application/json' },
   });
   if (!response.ok) throw new Error(`Failed to fetch walk-in job: ${response.status}`);
   return response.json();
@@ -42,13 +38,13 @@ export const getWalkInJob = async (id) => {
 
 export const getWalkInAdoption = async () => {
   try {
-    const response = await fetch(`${API_URL}/admin/walk-in-jobs/adoption`, {
+    const response = await authFetch(`${API_URL}/admin/walk-in-jobs/adoption`, {
       method: 'GET',
-      headers: { ...authHeaders(), 'Content-Type': 'application/json' },
     });
     if (!response.ok) return { data: [] };
     return response.json();
   } catch (error) {
+    if (error.code === 'SESSION_EXPIRED') throw error;
     console.error('Failed to fetch walk-in adoption:', error);
     return { data: [] };
   }

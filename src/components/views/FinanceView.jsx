@@ -1,12 +1,30 @@
 import { useState, useEffect } from "react";
-import { payoutQueue as initialPayoutQueue } from "../../data";
 import { API_URL } from "../../services/apiConfig.js";
+import { authFetch } from "../../services/authApi.js";
+import Badge from "../ui/Badge.jsx";
+import Button from "../ui/Button.jsx";
+import ConfirmDialog from "../ui/ConfirmDialog.jsx";
+import EmptyState from "../ui/EmptyState.jsx";
+import ErrorState from "../ui/ErrorState.jsx";
+import Modal from "../ui/Modal.jsx";
+import Spinner from "../ui/Spinner.jsx";
+import { useToast } from "../ui/toastContext.js";
+import { formatINR } from "../../utils/format.js";
 
 export default function FinanceView() {
   const [payoutQueue, setPayoutQueue] = useState([]);
   const [kpis, setKpis] = useState(null);
   const [loadingPayout, setLoadingPayout] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [kpiError, setKpiError] = useState('');
+  const [payoutError, setPayoutError] = useState('');
+  const toast = useToast();
+
+  // Confirmation for the bulk payout run. Replaces window.confirm(), which
+  // blocks the thread and can be suppressed by the browser outright — a
+  // suppressed prompt on a bulk money movement is not an acceptable failure.
+  const [initiateConfirm, setInitiateConfirm] = useState(null);
+  const [initiateBusy, setInitiateBusy] = useState(false);
 
   // Refund modal state. There was previously no refund UI at all — the
   // backend endpoint existed but could only be reached with curl, and the
@@ -24,25 +42,29 @@ export default function FinanceView() {
 
   const fetchKpis = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_URL}/admin/finance/kpis`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      setKpiError('');
+      // authFetch renews an expired access token and retries once itself; it
+      // only throws SESSION_EXPIRED (with a friendly message) once re-login
+      // is actually required, which is surfaced below instead of leaving the
+      // KPI tiles silently pinned at ₹0.00.
+      const res = await authFetch(`${API_URL}/admin/finance/kpis`);
       if (res.ok) {
         const data = await res.json();
         setKpis(data);
+      } else {
+        throw new Error(`Server returned ${res.status}`);
       }
     } catch (err) {
       console.error(err);
+      setKpis(null);
+      setKpiError(err?.message || 'Could not load finance KPIs.');
     }
   };
 
   const fetchPayouts = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
-      const res = await fetch(`${API_URL}/admin/finance/payouts`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
+      setPayoutError('');
+      const res = await authFetch(`${API_URL}/admin/finance/payouts`);
       if (res.ok) {
         const data = await res.json();
           // Transform the backend data into the queue format
@@ -62,9 +84,13 @@ export default function FinanceView() {
             payoutBlockedReason: item.payoutBlockedReason || null
           }));
         setPayoutQueue(formatted);
+      } else {
+        throw new Error(`Server returned ${res.status}`);
       }
     } catch (err) {
       console.error(err);
+      setPayoutQueue([]);
+      setPayoutError(err?.message || 'Could not load the payout queue.');
     } finally {
       setLoading(false);
     }
@@ -73,32 +99,29 @@ export default function FinanceView() {
   const handlePayNow = async (payout) => {
     setLoadingPayout(payout.id);
     try {
-      const token = localStorage.getItem('adminToken');
-      const response = await fetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
+      const response = await authFetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        }
       });
 
       const data = await response.json();
 
       if (response.ok || data.success) {
-        alert(`Payout Processed!`);
+        toast.success("Payout processed.");
         fetchPayouts(); // refresh queue
       } else {
-        alert("Failed to settle payout: " + (data.message || "Unknown error"));
+        toast.error("Failed to settle payout: " + (data.message || "Unknown error"));
       }
     } catch (error) {
       console.error("Payout error:", error);
-      alert("Failed due to a network or server error.");
+      // authFetch throws a friendly "session expired" message on
+      // SESSION_EXPIRED; surface it instead of a generic network message.
+      toast.error(error.message || "Failed due to a network or server error.");
     } finally {
       setLoadingPayout(null);
     }
   };
 
-  const handleInitiateAll = async () => {
+  const handleInitiateAll = () => {
     if (payoutQueue.length === 0) return;
 
     // Vendors with no payout account are skipped rather than attempted — each
@@ -108,28 +131,31 @@ export default function FinanceView() {
     const blocked = payoutQueue.length - queue.length;
 
     if (queue.length === 0) {
-      alert(`No payouts can be initiated: all ${blocked} pending payout(s) are blocked because the vendor has no payout account.`);
+      toast.error(
+        `No payouts can be initiated: all ${blocked} pending payout(s) are blocked because the vendor has no payout account.`
+      );
       return;
     }
 
     const blockedNote = blocked > 0
       ? `\n\n${blocked} payout(s) will be SKIPPED — those vendors have no payout account.`
       : '';
-    if (!confirm(`Initiate ${queue.length} payout(s)? This will sequentially call the payout API for each.${blockedNote}`)) {
-      return;
-    }
+    setInitiateConfirm({
+      queue,
+      message: `Initiate ${queue.length} payout(s)? This will sequentially call the payout API for each.${blockedNote}`,
+    });
+  };
+
+  const runInitiateAll = async () => {
+    const queue = initiateConfirm?.queue || [];
+    setInitiateBusy(true);
     let succeeded = 0;
     let failed = 0;
 
     for (const payout of queue) {
       try {
-        const token = localStorage.getItem('adminToken');
-        const response = await fetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
+        const response = await authFetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`
-          }
         });
         const data = await response.json();
         if (response.ok || data.success) {
@@ -143,7 +169,10 @@ export default function FinanceView() {
       }
     }
 
-    alert(`Initiated all payouts: ${succeeded} succeeded, ${failed} failed.`);
+    setInitiateBusy(false);
+    setInitiateConfirm(null);
+    const summary = `Initiated all payouts: ${succeeded} succeeded, ${failed} failed.`;
+    if (failed > 0) toast.error(summary); else toast.success(summary);
     fetchPayouts(); // refresh queue to reflect actual server state
     fetchKpis();
   };
@@ -169,12 +198,10 @@ export default function FinanceView() {
     setRefundBusy(true);
     setRefundResult(null);
     try {
-      const token = localStorage.getItem('adminToken');
       const idempotencyKey = `admin-refund-${paymentId}-${refundForm.amount || 'full'}-${Date.now()}`;
 
-      const res = await fetch(`${API_URL}/admin/finance/payments/${paymentId}/refund`, {
+      const res = await authFetch(`${API_URL}/admin/finance/payments/${paymentId}/refund`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({
           // Omitting amount means "refund whatever is left", which the
           // backend resolves — don't send an empty string.
@@ -226,15 +253,28 @@ export default function FinanceView() {
 
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
-      <div className="grid grid-cols-6 gap-3.5 mb-6">
-        {financeKpis.map((k, i) => (
-          <div key={i} className={`bg-brand-gray-100] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
-            <div className="text-xl mb-2.5">{k.icon}</div>
-            <div className="font-syne text-lg font-extrabold text-white mb-1">{k.value}</div>
-            <div className="text-xs text-brand-gray-700">{k.label}</div>
-          </div>
-        ))}
-      </div>
+      {kpiError && (
+        <ErrorState
+          message={kpiError}
+          onRetry={fetchKpis}
+          className="mb-4"
+        />
+      )}
+      {/* Fabricated-zero guard: when the KPI fetch fails, `kpis` is null and
+          formatInr(undefined) would otherwise render a confident "₹0.00" —
+          indistinguishable from a real zero-collections day. Show the error
+          state instead of the grid until the fetch succeeds. */}
+      {!kpiError && (
+        <div className="grid grid-cols-6 gap-3.5 mb-6">
+          {financeKpis.map((k, i) => (
+            <div key={i} className={`bg-brand-gray-100] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
+              <div className="text-xl mb-2.5">{k.icon}</div>
+              <div className="font-syne text-lg font-extrabold text-white mb-1">{k.value}</div>
+              <div className="text-xs text-brand-gray-700">{k.label}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Refund */}
       <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden mb-5 p-6 flex items-center justify-between">
@@ -244,23 +284,19 @@ export default function FinanceView() {
             Full or partial, by Payment ID. Repeat submissions of the same refund are de-duplicated automatically.
           </div>
         </div>
-        <button
-          className="bg-brand-red border-none rounded-lg px-4 py-2 text-white text-xs font-bold cursor-pointer font-sans hover:bg-[#ff5252] transition-colors"
-          onClick={() => { setRefundResult(null); setRefundOpen(true); }}
-        >
+        <Button size="sm" onClick={() => { setRefundResult(null); setRefundOpen(true); }}>
           Issue Refund
-        </button>
+        </Button>
       </div>
 
       {refundOpen && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50" onClick={() => !refundBusy && setRefundOpen(false)}>
-          <form
-            className="bg-brand-gray-100 rounded-[20px] border border-white/10 p-6 w-[420px] max-w-[92vw]"
-            onClick={(e) => e.stopPropagation()}
-            onSubmit={handleRefund}
-          >
-            <div className="font-syne text-base font-bold mb-4">Issue Refund</div>
-
+        <Modal
+          title="Issue Refund"
+          width="w-[420px]"
+          closeOnBackdrop={!refundBusy}
+          onClose={refundBusy ? undefined : () => setRefundOpen(false)}
+        >
+          <form onSubmit={handleRefund}>
             <label className="block text-[10px] font-bold text-brand-gray-600 uppercase tracking-wider mb-1">Payment ID</label>
             <input
               type="number"
@@ -303,24 +339,27 @@ export default function FinanceView() {
             )}
 
             <div className="flex gap-2 justify-end">
-              <button
-                type="button"
-                disabled={refundBusy}
-                onClick={() => setRefundOpen(false)}
-                className="rounded-lg px-4 py-2 text-xs font-bold cursor-pointer bg-white/5 text-white border border-white/10"
-              >
+              <Button variant="ghost" size="sm" disabled={refundBusy} onClick={() => setRefundOpen(false)}>
                 Close
-              </button>
-              <button
-                type="submit"
-                disabled={refundBusy}
-                className="bg-brand-red border-none rounded-lg px-4 py-2 text-white text-xs font-bold cursor-pointer hover:bg-[#ff5252] transition-colors disabled:opacity-50"
-              >
+              </Button>
+              <Button type="submit" size="sm" loading={refundBusy}>
                 {refundBusy ? 'Processing…' : 'Refund'}
-              </button>
+              </Button>
             </div>
           </form>
-        </div>
+        </Modal>
+      )}
+
+      {initiateConfirm && (
+        <ConfirmDialog
+          title="Initiate all payouts"
+          message={initiateConfirm.message}
+          confirmLabel="Initiate payouts"
+          danger
+          loading={initiateBusy}
+          onConfirm={runInitiateAll}
+          onCancel={() => setInitiateConfirm(null)}
+        />
       )}
 
       {/* Cash Flow Diagram */}
@@ -361,12 +400,9 @@ export default function FinanceView() {
       <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
         <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
           <span className="font-syne text-base font-bold">⏳ Payout Queue</span>
-          <button 
-            className="bg-brand-red border-none rounded-lg px-4 py-2 text-white text-xs font-bold cursor-pointer font-sans hover:bg-[#ff5252] transition-colors"
-            onClick={handleInitiateAll}
-          >
+          <Button size="sm" loading={initiateBusy} onClick={handleInitiateAll}>
             Initiate All Payouts
-          </button>
+          </Button>
         </div>
         {/* Header */}
         <div className="grid gap-2 items-center py-3.5 px-5 border-b border-white/5 transition-colors duration-150 hover:bg-white/5 grid-cols-[80px_1fr_100px_100px_100px_80px_80px]">
@@ -375,9 +411,17 @@ export default function FinanceView() {
           ))}
         </div>
         {loading ? (
-          <div className="py-6 text-center text-sm text-brand-gray-700">Loading payout queue...</div>
+          <div className="py-6 flex items-center justify-center gap-3 text-sm text-brand-gray-700">
+            <Spinner /> Loading payout queue...
+          </div>
+        ) : payoutError ? (
+          <ErrorState
+            message={payoutError}
+            onRetry={fetchPayouts}
+            className="m-5"
+          />
         ) : payoutQueue.length === 0 ? (
-          <div className="py-6 text-center text-sm text-brand-gray-700">No pending payouts 🎉</div>
+          <EmptyState icon="🎉" message="No pending payouts" />
         ) : (
           payoutQueue.map((p, i) => {
             const cfg = urgencyConfig[p.status] || urgencyConfig.normal;
@@ -397,30 +441,38 @@ export default function FinanceView() {
               </div>
               <div className="text-xs text-brand-gray-800">{p.booking}</div>
               <div className="text-xs text-brand-gray-800">{p.city}</div>
-              <div className="font-syne text-base font-extrabold text-white">₹{p.amount.toLocaleString("en-IN")}</div>
+              {/* Same class of bug as the dashboard's "Platform Revenue" tile
+                  -- p.amount arrives as a string, and .toLocaleString() on a
+                  string is a no-op that lets a raw float straight through. */}
+              <div className="font-syne text-base font-extrabold text-white">{formatINR(p.amount)}</div>
               <div className="flex items-center gap-1.5">
-                <div className="px-2 py-0.5 rounded-full" style={{ background: cfg.bg, border: `1px solid ${cfg.color}30` }}>
-                  <span className="text-xs font-bold" style={{color: cfg.color}}>{p.hoursLeft}h</span>
-                </div>
+                <Badge
+                  size="sm"
+                  label={`${p.hoursLeft}h`}
+                  color={cfg.color}
+                  bg={cfg.bg}
+                  border={`${cfg.color}30`}
+                  className="!rounded-full"
+                />
               </div>
               {/* Disabled rather than hidden when the vendor has no payout
                   account: the operator still needs to see the payable amount
                   and understand why it can't be settled yet. */}
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={() => handlePayNow(p)}
-                disabled={loadingPayout === p.id || !p.payoutReady}
+                loading={loadingPayout === p.id}
+                disabled={!p.payoutReady}
                 title={!p.payoutReady ? (p.payoutBlockedReason || 'Vendor cannot be paid out') : undefined}
-                className="py-1.5 px-3 rounded-lg border-none text-[11px] font-semibold font-sans transition-all duration-150 relative overflow-hidden disabled:cursor-not-allowed"
                 style={{
                   background: cfg.bg,
                   color: cfg.color,
                   border: `1px solid ${cfg.color}30`,
-                  opacity: (loadingPayout === p.id || !p.payoutReady) ? 0.45 : 1,
-                  cursor: p.payoutReady ? 'pointer' : 'not-allowed',
                 }}
               >
                 {loadingPayout === p.id ? "Processing..." : (p.payoutReady ? "Pay Now" : "Blocked")}
-              </button>
+              </Button>
             </div>
           );
         })

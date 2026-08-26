@@ -12,6 +12,9 @@ export default function UsersView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(false);
+
+  const PAGE_SIZE = 10;
 
   const filters = ["All", "Active", "Inactive", "Uninstalled"];
 
@@ -21,6 +24,12 @@ export default function UsersView() {
     "Inactive": "inactive",
     "Uninstalled": "uninstalled"
   };
+
+  // Changing the filter must return to page 1 -- see the same guard in
+  // VendorsView for why.
+  useEffect(() => {
+    setPage(1);
+  }, [filter]);
 
   useEffect(() => {
     fetchUsers();
@@ -32,7 +41,7 @@ export default function UsersView() {
       setError(null);
 
       const filterType = keyMap[filter] || "all";
-      const data = await getUsers(filterType, page, 10);
+      const data = await getUsers(filterType, page, PAGE_SIZE);
 
       const formattedUsers = Array.isArray(data) ? data.map(u => ({
         id: String(u.id || ""),
@@ -47,6 +56,9 @@ export default function UsersView() {
       })) : [];
 
       setUsers(formattedUsers);
+      // getUsers() returns a bare array with no total, so a full page implies
+      // there may be another one.
+      setHasMore(formattedUsers.length === PAGE_SIZE);
     } catch (err) {
       console.error('Error fetching users:', err);
       setError(err.message || 'Failed to load users');
@@ -72,7 +84,9 @@ export default function UsersView() {
         await deleteUser(id);
         fetchUsers(); // Refresh after deletion
       } catch (err) {
-        alert("Failed to delete user");
+        // The reason was being discarded, so a permissions failure and a
+        // network failure both surfaced as the same dead-end message.
+        setError(err?.message ? `Failed to delete user: ${err.message}` : 'Failed to delete user.');
       }
     }
   };
@@ -170,6 +184,29 @@ export default function UsersView() {
           })
         )}
       </div>
+
+      {/* Prev/Next were never rendered, so `page` could never change and only
+          the first 10 users were ever reachable. */}
+      {!loading && !error && (page > 1 || hasMore) && (
+        <div className="flex items-center justify-end gap-2 mt-4">
+          <button
+            onClick={() => setPage(p => Math.max(1, p - 1))}
+            disabled={page === 1}
+            className="py-1.5 px-4 rounded-lg text-xs font-semibold bg-white/10 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/15 transition-colors"
+          >
+            Prev
+          </button>
+          <span className="text-xs text-brand-gray-600 px-2">Page {page}</span>
+          <button
+            onClick={() => setPage(p => p + 1)}
+            disabled={!hasMore}
+            className="py-1.5 px-4 rounded-lg text-xs font-semibold bg-white/10 text-white disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/15 transition-colors"
+          >
+            Next
+          </button>
+        </div>
+      )}
+
       {selectedUser && <UserCard user={selectedUser} onClose={() => setSelectedUser(null)} />}
     </div>
   );

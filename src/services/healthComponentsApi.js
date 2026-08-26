@@ -6,18 +6,13 @@
  */
 
 import { API_URL } from './apiConfig.js';
-
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
-  'Content-Type': 'application/json',
-});
+import { authFetch } from './authApi.js';
 
 /** Includes inactive components too, unlike the vendor-facing checklist. */
 export const getHealthComponents = async () => {
   try {
-    const response = await fetch(`${API_URL}/admin/health-components`, {
+    const response = await authFetch(`${API_URL}/admin/health-components`, {
       method: 'GET',
-      headers: authHeaders(),
     });
     if (!response.ok) {
       console.error(`Health components API error: ${response.status}`);
@@ -26,15 +21,15 @@ export const getHealthComponents = async () => {
     const json = await response.json();
     return json.data ?? [];
   } catch (error) {
+    if (error.code === 'SESSION_EXPIRED') throw error;
     console.error('Failed to fetch health components:', error);
     return [];
   }
 };
 
 export const createHealthComponent = async (component) => {
-  const response = await fetch(`${API_URL}/admin/health-components`, {
+  const response = await authFetch(`${API_URL}/admin/health-components`, {
     method: 'POST',
-    headers: authHeaders(),
     body: JSON.stringify(component),
   });
   if (!response.ok) {
@@ -45,9 +40,8 @@ export const createHealthComponent = async (component) => {
 };
 
 export const updateHealthComponent = async (id, updates) => {
-  const response = await fetch(`${API_URL}/admin/health-components/${id}`, {
+  const response = await authFetch(`${API_URL}/admin/health-components/${id}`, {
     method: 'PATCH',
-    headers: authHeaders(),
     body: JSON.stringify(updates),
   });
   if (!response.ok) {

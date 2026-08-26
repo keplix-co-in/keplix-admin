@@ -20,12 +20,37 @@ export default function SettingsView() {
           <p className="text-sm text-brand-gray-300">Manage your application preferences and configurations.</p>
         </div>
         <div className="flex gap-3">
-          <button className="py-2 px-4 rounded-lg bg-transparent border border-white/10 text-white/70 hover:bg-white/5 hover:text-white transition-all text-sm font-semibold">
-            Cancel
-          </button>
-          <button className="py-2 px-5 rounded-lg bg-linear-to-r from-brand-red to-[#ff4400] text-white border-none cursor-pointer shadow-[0_4px_14px_rgba(255,61,61,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)] text-sm font-semibold">
-            Save Changes
-          </button>
+          {activeTab === 'health' ? (
+            <>
+              <button className="py-2 px-4 rounded-lg bg-transparent border border-white/10 text-white/70 hover:bg-white/5 hover:text-white transition-all text-sm font-semibold">
+                Cancel
+              </button>
+              <button className="py-2 px-5 rounded-lg bg-linear-to-r from-brand-red to-[#ff4400] text-white border-none cursor-pointer shadow-[0_4px_14px_rgba(255,61,61,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)] text-sm font-semibold">
+                Save Changes
+              </button>
+            </>
+          ) : (
+            <>
+              {/* General/Security/Notifications have no backing endpoint —
+                  only /admin/platform-settings (Health Sheets tab) exists.
+                  Disabled rather than removed so the layout doesn't jump
+                  between tabs; the tooltip explains why. */}
+              <button
+                disabled
+                title="Not wired up yet — this tab has no backend endpoint to save to."
+                className="py-2 px-4 rounded-lg bg-transparent border border-white/5 text-white/25 cursor-not-allowed transition-all text-sm font-semibold"
+              >
+                Cancel
+              </button>
+              <button
+                disabled
+                title="Not wired up yet — this tab has no backend endpoint to save to."
+                className="py-2 px-5 rounded-lg bg-white/5 text-white/25 border-none cursor-not-allowed text-sm font-semibold"
+              >
+                Save Changes
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -52,6 +77,9 @@ export default function SettingsView() {
         <div className="flex-1 bg-[#141420] rounded-[20px] border border-white/5 p-8 relative overflow-hidden">
           {activeTab === 'general' && (
             <div className="flex flex-col gap-8 animate-[fadeInUp_0.3s_ease_forwards]">
+              <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-4 py-2.5 text-xs text-amber-400/90">
+                Not wired up yet — changes on this tab are not saved anywhere.
+              </div>
               <div>
                 <h3 className="text-lg font-syne font-bold text-white mb-1">Company Information</h3>
                 <p className="text-xs text-white/40 mb-5">Update your business details and contact information.</p>
@@ -115,6 +143,9 @@ export default function SettingsView() {
 
           {activeTab === 'security' && (
             <div className="flex flex-col gap-8 animate-[fadeInUp_0.3s_ease_forwards]">
+              <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-4 py-2.5 text-xs text-amber-400/90">
+                Not wired up yet — changes on this tab are not saved anywhere.
+              </div>
               <div>
                 <h3 className="text-lg font-syne font-bold text-white mb-1">Security Settings</h3>
                 <p className="text-xs text-white/40 mb-5">Manage passwords and access security.</p>
@@ -150,6 +181,9 @@ export default function SettingsView() {
 
           {activeTab === 'notifications' && (
             <div className="flex flex-col gap-8 animate-[fadeInUp_0.3s_ease_forwards]">
+              <div className="rounded-lg border border-amber-400/20 bg-amber-400/5 px-4 py-2.5 text-xs text-amber-400/90">
+                Not wired up yet — changes on this tab are not saved anywhere.
+              </div>
               <div>
                 <h3 className="text-lg font-syne font-bold text-white mb-1">Notification Preferences</h3>
                 <p className="text-xs text-white/40 mb-5">Choose what you get notified about.</p>

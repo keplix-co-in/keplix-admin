@@ -2,6 +2,26 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { getOfferSlots, saveOfferSlotByKey } from '../../services/offersApi';
 import offerPlacements from '../../data/offerPlacements';
 import OfferSlotFormModal from '../Cards/OfferSlotFormModal';
+import Badge from '../ui/Badge.jsx';
+import Button from '../ui/Button.jsx';
+import ErrorState from '../ui/ErrorState.jsx';
+import Spinner from '../ui/Spinner.jsx';
+import { useToast } from '../ui/toastContext.js';
+
+/**
+ * is_live, not is_active: a slot can be on but outside its date window, and
+ * "Active" alone would wrongly imply it's showing. Same shape as the configs
+ * in `src/data/config.js`.
+ */
+const offerStatusConfig = {
+  live:    { label: 'Live',      color: '#4CAF50', bg: 'rgba(76,175,80,0.1)',   border: 'rgba(76,175,80,0.2)' },
+  scheduled: { label: 'Scheduled', color: '#ff9944', bg: 'rgba(255,153,68,0.1)',  border: 'rgba(255,153,68,0.2)' },
+  off:     { label: 'Off',       color: '#666677', bg: 'rgba(100,100,120,0.1)', border: 'rgba(100,100,120,0.2)' },
+  unset:   { label: 'Not set',   color: '#666677', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
+};
+
+const slotStatusKey = (slot) =>
+  slot?.is_live ? 'live' : slot?.is_active ? 'scheduled' : slot ? 'off' : 'unset';
 
 const GRID = 'grid-cols-[1.5fr_1.5fr_110px_130px_150px]';
 
@@ -27,6 +47,8 @@ export default function OffersView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(null);
+  const [togglingKey, setTogglingKey] = useState(null);
+  const toast = useToast();
 
   const fetchSlots = useCallback(async () => {
     setLoading(true);
@@ -66,15 +88,20 @@ export default function OffersView() {
   );
 
   const toggleActive = async (placement, slot) => {
+    const turningOn = !slot?.is_active;
+    setTogglingKey(placement.key);
     try {
       await saveOfferSlotByKey(placement.key, {
         label: placement.label,
         description: placement.description,
-        is_active: !slot?.is_active,
+        is_active: turningOn,
       });
+      toast.success(`${placement.label} turned ${turningOn ? 'on' : 'off'}.`);
       fetchSlots();
     } catch (err) {
-      alert(err.message || 'Failed to update offer');
+      toast.error(err.message || 'Failed to update offer');
+    } finally {
+      setTogglingKey(null);
     }
   };
 
@@ -87,11 +114,7 @@ export default function OffersView() {
         </p>
       </div>
 
-      {error && (
-        <div className="mb-4 rounded-xl bg-red-500/10 border border-red-500/30 px-4 py-3 text-sm text-red-300">
-          {error}
-        </div>
-      )}
+      {error && <ErrorState message={error} onRetry={fetchSlots} className="mb-4" />}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
         <div className={`grid ${GRID} gap-4 px-5 py-3 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-white/40`}>
@@ -102,7 +125,11 @@ export default function OffersView() {
           <div className="text-right">Actions</div>
         </div>
 
-        {loading && <div className="px-5 py-10 text-center text-sm text-white/40">Loading…</div>}
+        {loading && (
+          <div className="px-5 py-10 flex items-center justify-center gap-3 text-sm text-white/40">
+            <Spinner /> Loading…
+          </div>
+        )}
 
         {!loading &&
           rows.map(({ placement, slot }) => (
@@ -129,35 +156,22 @@ export default function OffersView() {
 
               <div className="text-sm text-white/60">{scheduleLabel(slot)}</div>
 
-              {/* is_live, not is_active: a slot can be on but outside its date
-                  window, and "Active" alone would wrongly imply it's showing. */}
               <div>
-                <span
-                  className={`px-2.5 py-1 rounded-lg text-xs font-semibold ${
-                    slot?.is_live
-                      ? 'bg-emerald-500/15 text-emerald-300'
-                      : slot?.is_active
-                        ? 'bg-amber-500/15 text-amber-300'
-                        : 'bg-white/10 text-white/50'
-                  }`}
-                >
-                  {slot?.is_live ? 'Live' : slot?.is_active ? 'Scheduled' : slot ? 'Off' : 'Not set'}
-                </span>
+                <Badge config={offerStatusConfig[slotStatusKey(slot)]} />
               </div>
 
               <div className="flex justify-end gap-2">
-                <button
-                  onClick={() => setEditing({ placement, slot })}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-white/70 bg-white/5 hover:bg-white/10 hover:text-white transition-colors"
-                >
+                <Button variant="ghost" size="sm" onClick={() => setEditing({ placement, slot })}>
                   Edit
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  loading={togglingKey === placement.key}
                   onClick={() => toggleActive(placement, slot)}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 transition-colors"
                 >
                   {slot?.is_active ? 'Turn off' : 'Turn on'}
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -175,6 +189,7 @@ export default function OffersView() {
           onClose={() => setEditing(null)}
           onSaved={() => {
             setEditing(null);
+            toast.success('Offer saved.');
             fetchSlots();
           }}
         />

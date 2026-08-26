@@ -10,4 +10,14 @@ export default defineConfig({
     react(),
     babel({ presets: [reactCompilerPreset()] })
   ],
+  test: {
+    environment: 'jsdom',
+    globals: true,
+    setupFiles: ['./src/test/setup.js'],
+    css: false,
+    env: {
+      VITE_API_URL: 'http://test.local/api',
+    },
+    include: ['src/**/*.{test,spec}.{js,jsx}'],
+  },
 })

@@ -45,7 +45,17 @@ export default function WalkInJobsView() {
   }, [fetchJobs]);
 
   useEffect(() => {
-    getWalkInAdoption().then((res) => setAdoption(res.data || []));
+    let cancelled = false;
+    getWalkInAdoption()
+      .then((res) => { if (!cancelled) setAdoption(res.data || []); })
+      // No .catch() here previously -- an unhandled promise rejection. It is
+      // latent only because walkInJobsApi swallows its own errors today; the
+      // moment that service is changed to throw, this becomes an unhandled
+      // rejection. The sibling fetchJobs call above already catches, so this
+      // was an oversight rather than a decision. The adoption panel is
+      // supplementary, so a failure just leaves it hidden.
+      .catch(() => { if (!cancelled) setAdoption([]); });
+    return () => { cancelled = true; };
   }, []);
 
   return (

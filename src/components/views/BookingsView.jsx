@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { bookingStatusConfig } from "../../data/config";
 import { getBookings } from "../../services/bookingsApi";
 import BookingCard from "../Cards/BookingCard";
+import { formatINR } from "../../utils/format.js";
 
 export default function BookingsView({ filter, setFilter }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
@@ -108,8 +109,14 @@ export default function BookingsView({ filter, setFilter }) {
                 <div className="text-xs text-brand-gray-800">{b.vendor}</div>
                 <div className="text-xs text-brand-gray-800">{b.service}</div>
                 <div className="text-[10px] text-brand-gray-700">{b.slot}</div>
-                <div className="font-syne text-sm font-extrabold text-white">₹{(b.amount || 0).toLocaleString("en-IN")}</div>
-                <div className="text-sm font-semibold text-brand-red">₹{b.fee || 0}</div>
+                {/* Was `(b.amount || 0).toLocaleString("en-IN")` -- b.amount
+                    comes back from the API as a string (a serialized Prisma
+                    Decimal), and calling .toLocaleString() on a string is a
+                    no-op, so any non-integer amount showed raw float digits
+                    (found live: "₹24206.70000000000012" on the dashboard's
+                    equivalent field). */}
+                <div className="font-syne text-sm font-extrabold text-white">{formatINR(b.amount)}</div>
+                <div className="text-sm font-semibold text-brand-red">{formatINR(b.fee)}</div>
                 <div><span className="inline-flex items-center py-0.75 px-2.5 rounded-full text-[10px] font-bold tracking-[0.3px] border" style={{ color: sc.color, background: sc.bg, borderColor: sc.border }}>{sc.label}</span></div>
               </div>
             );
