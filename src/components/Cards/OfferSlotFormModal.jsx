@@ -157,7 +157,7 @@ export default function OfferSlotFormModal({ placement, slot, onClose, onSaved }
               type="text"
               value={form.badge_text}
               onChange={(e) => setForm({ ...form, badge_text: e.target.value })}
-              placeholder="Flat ₹100 off"
+              placeholder="e.g. 20% off first service"
               className={inputClass}
             />
             <p className={hintClass}>Keep it short — it sits on a small red tag.</p>

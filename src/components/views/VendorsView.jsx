@@ -47,8 +47,10 @@ export default function VendorsView({ filter, setFilter }) {
       const formattedVendors = Array.isArray(data) ? data.map(v => ({
         id: String(v.id || ""),
         name: v.vendor || "N/A",
-        owner: "", 
-        verified: "basic", 
+        owner: v.owner || "",
+        email: v.email || "",
+        profileImage: v.profileImage || null,
+        verified: v.verified || "basic",
         category: v.category || "N/A",
         city: v.city || "N/A",
         bookings: v.bookings || 0,

@@ -46,12 +46,16 @@ export default function UsersView() {
       const formattedUsers = Array.isArray(data) ? data.map(u => ({
         id: String(u.id || ""),
         name: u.name || "N/A",
-        email: "", // Not returned by API
+        email: u.email || "",
+        profileImage: u.profileImage || null,
         phone: String(u.contact || "N/A"),
         role: "User", // Default role
         bookings: u.bookings || 0,
         status: u.status || "inactive",
         joined: new Date(u.joined).toLocaleDateString(),
+        // No session/activity-tracking column exists on User yet, so this
+        // stays honestly blank (UserCard falls back to "—") rather than
+        // faking a value.
         lastActive: ""
       })) : [];
 
