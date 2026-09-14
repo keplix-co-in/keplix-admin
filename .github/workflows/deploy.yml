@@ -5,13 +5,41 @@ on:
     branches: [ main ] # Trigger deployment on push to the main branch
 
 jobs:
+  # Gate added 2026-09-14 (audit F31): this workflow deployed straight to
+  # production on every push to main with no test or lint step at all. The
+  # deploy job below now `needs: test`, so a failing test or lint run blocks
+  # the deploy instead of shipping regardless.
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+      - name: Lint
+        run: npm run lint
+      - name: Test
+        run: npm test
+
   build-and-deploy:
+    needs: test
     runs-on: ubuntu-latest
 
     env:
       VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
       VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       VITE_API_URL: ${{ secrets.VITE_API_URL }}
+      # Read from the job env below (not interpolated with ${{ }} directly
+      # into each run: line) so the secret value is never substituted
+      # literally into the generated shell script -- see
+      # keplix-website/.github/workflows/deploy.yml's own comment on this
+      # exact pattern, which this workflow did not follow (audit F71).
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
 
     steps:
     - name: Checkout
@@ -21,10 +49,10 @@ jobs:
       run: npm install --global vercel@latest
 
     - name: Pull Vercel Environment
-      run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
-      
+      run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"
+
     - name: Build Project Artifacts
-      run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      run: vercel build --prod --token="$VERCEL_TOKEN"
 
     - name: Deploy Project Artifacts to Vercel
-      run: vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }}
+      run: vercel deploy --prebuilt --prod --token="$VERCEL_TOKEN"
