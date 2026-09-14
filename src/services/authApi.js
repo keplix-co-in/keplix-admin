@@ -136,6 +136,31 @@ export const authFetch = async (url, options = {}) => {
       },
     });
 
+  return sendWithRefresh(send);
+};
+
+/**
+ * Same 401-retry/token-refresh behavior as authFetch, but does NOT force
+ * Content-Type: application/json — for multipart/FormData bodies (e.g. blog
+ * post cover image uploads), where the browser must set its own Content-Type
+ * with the multipart boundary. Without this, callers with FormData bodies had
+ * to fall back to plain fetch() and lost the automatic refresh-on-401 retry
+ * that every other admin request gets.
+ */
+export const authFetchRaw = async (url, options = {}) => {
+  const send = () =>
+    fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+
+  return sendWithRefresh(send);
+};
+
+const sendWithRefresh = async (send) => {
   let response = await send();
   if (response.status !== 401) return response;
 
@@ -231,5 +256,6 @@ export default {
   getAdminUser,
   isAdminAuthenticated,
   refreshAdminToken,
-  authFetch
+  authFetch,
+  authFetchRaw
 };

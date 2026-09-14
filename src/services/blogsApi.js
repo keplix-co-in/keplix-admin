@@ -4,18 +4,13 @@
  */
 
 import { API_URL } from './apiConfig.js';
-import { authFetch } from './authApi.js';
+import { authFetch, authFetchRaw } from './authApi.js';
 
-// authFetch attaches/renews the bearer token automatically, but it always
-// forces Content-Type: application/json onto every request. createBlogPost
-// and updateBlogPost send FormData (so a cover image file can ride along)
-// and MUST NOT have a Content-Type header — the browser sets its own
-// multipart boundary. Those two calls stay on plain fetch with a manual
-// Authorization header for that reason; the JSON/no-body calls below use
-// authFetch.
-const authHeaders = () => ({
-  Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
-});
+// createBlogPost and updateBlogPost send FormData (so a cover image file can
+// ride along) and MUST NOT have a Content-Type header — the browser sets its
+// own multipart boundary. They use authFetchRaw, which skips the JSON
+// Content-Type authFetch normally forces but still gets the same
+// refresh-on-401 retry.
 
 /**
  * Posts are sent as multipart/form-data so a cover image file can ride along.
@@ -56,9 +51,8 @@ export const getBlogPosts = async ({ status = 'all', page = 1, limit = 50, searc
 
 /** Mutations throw so the caller can surface the failure. */
 export const createBlogPost = async (post) => {
-  const response = await fetch(`${API_URL}/admin/blogs`, {
+  const response = await authFetchRaw(`${API_URL}/admin/blogs`, {
     method: 'POST',
-    headers: authHeaders(),
     body: toFormData(post),
   });
 
@@ -70,9 +64,8 @@ export const createBlogPost = async (post) => {
 };
 
 export const updateBlogPost = async (id, post) => {
-  const response = await fetch(`${API_URL}/admin/blogs/${id}`, {
+  const response = await authFetchRaw(`${API_URL}/admin/blogs/${id}`, {
     method: 'PUT',
-    headers: authHeaders(),
     body: toFormData(post),
   });
 
