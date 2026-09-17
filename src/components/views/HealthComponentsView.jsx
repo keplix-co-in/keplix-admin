@@ -7,14 +7,8 @@ import EmptyState from '../ui/EmptyState.jsx';
 import ErrorState from '../ui/ErrorState.jsx';
 import Spinner from '../ui/Spinner.jsx';
 import { useToast } from '../ui/toastContext.js';
-
-/** Same shape as the status configs in `src/data/config.js`. */
-const activeStatusConfig = {
-  active:   { label: 'Active',   color: '#4CAF50', bg: 'rgba(76,175,80,0.1)',   border: 'rgba(76,175,80,0.2)' },
-  inactive: { label: 'Inactive', color: '#666677', bg: 'rgba(100,100,120,0.1)', border: 'rgba(100,100,120,0.2)' },
-};
-
-const GRID = 'grid-cols-[1fr_1fr_100px_100px_140px]';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { activeStatusConfig } from '../../data/config.js';
 
 export default function HealthComponentsView() {
   const [components, setComponents] = useState([]);
@@ -80,14 +74,6 @@ export default function HealthComponentsView() {
       {error && <ErrorState message={error} onRetry={fetchComponents} className="mb-4" />}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
-        <div className={`grid ${GRID} gap-4 px-5 py-3 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-white/40`}>
-          <div>Label</div>
-          <div>Key</div>
-          <div>Order</div>
-          <div>Active</div>
-          <div className="text-right">Actions</div>
-        </div>
-
         {loading && (
           <div className="px-5 py-10 flex items-center justify-center gap-3 text-sm text-white/40">
             <Spinner /> Loading…
@@ -103,33 +89,46 @@ export default function HealthComponentsView() {
           />
         )}
 
-        {!loading &&
-          components.map((c) => (
-            <div
-              key={c.id}
-              className={`grid ${GRID} gap-4 items-center px-5 py-4 border-t border-white/5 hover:bg-white/[0.02] transition-colors`}
-            >
-              <div className="text-sm font-semibold text-white truncate">{c.label}</div>
-              <div className="text-sm text-white/40 font-mono truncate">{c.key}</div>
-              <div className="text-sm text-white/60">{c.display_order}</div>
-              <div>
-                <Badge config={activeStatusConfig[c.is_active ? 'active' : 'inactive']} />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  loading={togglingId === c.id}
-                  onClick={() => toggleActive(c)}
-                >
-                  {c.is_active ? 'Deactivate' : 'Activate'}
-                </Button>
-              </div>
-            </div>
-          ))}
+        {!loading && components.length > 0 && (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white/[0.03] border-white/10 hover:bg-white/[0.03]">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Label</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Key</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Order</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Active</TableHead>
+                <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-white/40">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {components.map((c) => (
+                <TableRow key={c.id} className="border-white/5 hover:bg-white/[0.02]">
+                  <TableCell className="text-sm font-semibold text-white truncate">{c.label}</TableCell>
+                  <TableCell className="text-sm text-white/40 font-mono truncate">{c.key}</TableCell>
+                  <TableCell className="text-sm text-white/60">{c.display_order}</TableCell>
+                  <TableCell>
+                    <Badge config={activeStatusConfig[c.is_active ? 'active' : 'inactive']} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(c)}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={togglingId === c.id}
+                        onClick={() => toggleActive(c)}
+                      >
+                        {c.is_active ? 'Deactivate' : 'Activate'}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {modalOpen && (

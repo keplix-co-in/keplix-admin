@@ -8,25 +8,14 @@ import EmptyState from '../ui/EmptyState.jsx';
 import ErrorState from '../ui/ErrorState.jsx';
 import Spinner from '../ui/Spinner.jsx';
 import { useToast } from '../ui/toastContext.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { postStatusConfig } from '../../data/config.js';
 
 const FILTERS = [
   { id: 'all', label: 'All' },
   { id: 'published', label: 'Published' },
   { id: 'draft', label: 'Drafts' },
 ];
-
-/**
- * Same shape as the status configs in `src/data/config.js`, so the raw enum
- * (`published` / `draft`) is never rendered to an operator — every other view
- * maps its statuses to a human label, and this one used to leak the DB value.
- */
-const postStatusConfig = {
-  published: { label: 'Published', color: '#4CAF50', bg: 'rgba(76,175,80,0.1)', border: 'rgba(76,175,80,0.2)' },
-  draft: { label: 'Draft', color: '#ff9944', bg: 'rgba(255,153,68,0.1)', border: 'rgba(255,153,68,0.2)' },
-  archived: { label: 'Archived', color: '#666677', bg: 'rgba(100,100,120,0.1)', border: 'rgba(100,100,120,0.2)' },
-};
-
-const GRID = 'grid-cols-[1.8fr_1fr_110px_150px_140px]';
 
 const formatDate = (iso) =>
   iso
@@ -126,16 +115,6 @@ export default function BlogsView() {
       {error && <ErrorState message={error} onRetry={fetchPosts} className="mb-4" />}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
-        <div
-          className={`grid ${GRID} gap-4 px-5 py-3 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-white/40`}
-        >
-          <div>Title</div>
-          <div>Category</div>
-          <div>Status</div>
-          <div>Published</div>
-          <div className="text-right">Actions</div>
-        </div>
-
         {loading && (
           <div className="px-5 py-10 flex items-center justify-center gap-3 text-sm text-white/40">
             <Spinner /> Loading posts…
@@ -155,38 +134,51 @@ export default function BlogsView() {
           />
         )}
 
-        {!loading &&
-          visible.map((post) => (
-            <div
-              key={post.id}
-              className={`grid ${GRID} gap-4 items-center px-5 py-4 border-t border-white/5 hover:bg-white/[0.02] transition-colors`}
-            >
-              <div className="min-w-0">
-                <p className="truncate text-sm font-semibold text-white">
-                  {post.title}
-                </p>
-                <p className="truncate text-xs text-white/40">/{post.slug}</p>
-              </div>
-              <div className="text-sm text-white/60 truncate">{post.category}</div>
-              <div>
-                <Badge
-                  config={postStatusConfig[post.status]}
-                  label={postStatusConfig[post.status] ? undefined : (post.status || '—')}
-                />
-              </div>
-              <div className="text-sm text-white/50">
-                {formatDate(post.publishedAt)}
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => openEdit(post)}>
-                  Edit
-                </Button>
-                <Button variant="danger" size="sm" onClick={() => setPendingDelete(post)}>
-                  Delete
-                </Button>
-              </div>
-            </div>
-          ))}
+        {!loading && visible.length > 0 && (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white/[0.03] border-white/10 hover:bg-white/[0.03]">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Title</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Category</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Status</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Published</TableHead>
+                <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-white/40">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((post) => (
+                <TableRow key={post.id} className="border-white/5 hover:bg-white/[0.02]">
+                  <TableCell className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-white">
+                      {post.title}
+                    </p>
+                    <p className="truncate text-xs text-white/40">/{post.slug}</p>
+                  </TableCell>
+                  <TableCell className="text-sm text-white/60 truncate">{post.category}</TableCell>
+                  <TableCell>
+                    <Badge
+                      config={postStatusConfig[post.status]}
+                      label={postStatusConfig[post.status] ? undefined : (post.status || '—')}
+                    />
+                  </TableCell>
+                  <TableCell className="text-sm text-white/50">
+                    {formatDate(post.publishedAt)}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => openEdit(post)}>
+                        Edit
+                      </Button>
+                      <Button variant="danger" size="sm" onClick={() => setPendingDelete(post)}>
+                        Delete
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       {pendingDelete && (

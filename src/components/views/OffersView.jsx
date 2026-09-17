@@ -7,23 +7,13 @@ import Button from '../ui/Button.jsx';
 import ErrorState from '../ui/ErrorState.jsx';
 import Spinner from '../ui/Spinner.jsx';
 import { useToast } from '../ui/toastContext.js';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import { offerStatusConfig } from '../../data/config.js';
 
-/**
- * is_live, not is_active: a slot can be on but outside its date window, and
- * "Active" alone would wrongly imply it's showing. Same shape as the configs
- * in `src/data/config.js`.
- */
-const offerStatusConfig = {
-  live:    { label: 'Live',      color: '#4CAF50', bg: 'rgba(76,175,80,0.1)',   border: 'rgba(76,175,80,0.2)' },
-  scheduled: { label: 'Scheduled', color: '#ff9944', bg: 'rgba(255,153,68,0.1)',  border: 'rgba(255,153,68,0.2)' },
-  off:     { label: 'Off',       color: '#666677', bg: 'rgba(100,100,120,0.1)', border: 'rgba(100,100,120,0.2)' },
-  unset:   { label: 'Not set',   color: '#666677', bg: 'rgba(255,255,255,0.05)', border: 'rgba(255,255,255,0.1)' },
-};
-
+// is_live, not is_active: a slot can be on but outside its date window, and
+// "Active" alone would wrongly imply it's showing.
 const slotStatusKey = (slot) =>
   slot?.is_live ? 'live' : slot?.is_active ? 'scheduled' : slot ? 'off' : 'unset';
-
-const GRID = 'grid-cols-[1.5fr_1.5fr_110px_130px_150px]';
 
 /** What the customer actually sees, so the admin needn't open the editor. */
 function preview(placement, slot) {
@@ -117,64 +107,69 @@ export default function OffersView() {
       {error && <ErrorState message={error} onRetry={fetchSlots} className="mb-4" />}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
-        <div className={`grid ${GRID} gap-4 px-5 py-3 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-white/40`}>
-          <div>Placement</div>
-          <div>Shows</div>
-          <div>Schedule</div>
-          <div>Status</div>
-          <div className="text-right">Actions</div>
-        </div>
-
         {loading && (
           <div className="px-5 py-10 flex items-center justify-center gap-3 text-sm text-white/40">
             <Spinner /> Loading…
           </div>
         )}
 
-        {!loading &&
-          rows.map(({ placement, slot }) => (
-            <div
-              key={placement.key}
-              className={`grid ${GRID} gap-4 items-center px-5 py-4 border-t border-white/5 hover:bg-white/[0.02] transition-colors`}
-            >
-              {/* Name and location, not the key — the point of a placement is
-                  knowing WHERE it shows. */}
-              <div className="min-w-0">
-                <div className="text-sm font-semibold text-white truncate">{placement.label}</div>
-                <div className="text-xs text-white/40 mt-0.5 truncate">{placement.description}</div>
-              </div>
+        {!loading && (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white/[0.03] border-white/10 hover:bg-white/[0.03]">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Placement</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Shows</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Schedule</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Status</TableHead>
+                <TableHead className="text-right text-xs font-semibold uppercase tracking-wide text-white/40">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {rows.map(({ placement, slot }) => (
+                <TableRow key={placement.key} className="border-white/5 hover:bg-white/[0.02]">
+                  {/* Name and location, not the key — the point of a placement is
+                      knowing WHERE it shows. */}
+                  <TableCell className="min-w-0">
+                    <div className="text-sm font-semibold text-white truncate">{placement.label}</div>
+                    <div className="text-xs text-white/40 mt-0.5 truncate">{placement.description}</div>
+                  </TableCell>
 
-              <div className="min-w-0">
-                <div className="text-sm text-white/80 truncate">{preview(placement, slot)}</div>
-                <div className="text-xs text-white/30 mt-0.5 truncate">
-                  {slot?.vendor_ids?.length
-                    ? `${slot.vendor_ids.length} vendor${slot.vendor_ids.length > 1 ? 's' : ''}`
-                    : 'All vendors'}
-                  {placement.fields.includes('image_url') && slot?.image_url ? ' · has background' : ''}
-                </div>
-              </div>
+                  <TableCell className="min-w-0">
+                    <div className="text-sm text-white/80 truncate">{preview(placement, slot)}</div>
+                    <div className="text-xs text-white/30 mt-0.5 truncate">
+                      {slot?.vendor_ids?.length
+                        ? `${slot.vendor_ids.length} vendor${slot.vendor_ids.length > 1 ? 's' : ''}`
+                        : 'All vendors'}
+                      {placement.fields.includes('image_url') && slot?.image_url ? ' · has background' : ''}
+                    </div>
+                  </TableCell>
 
-              <div className="text-sm text-white/60">{scheduleLabel(slot)}</div>
+                  <TableCell className="text-sm text-white/60">{scheduleLabel(slot)}</TableCell>
 
-              <div>
-                <Badge config={offerStatusConfig[slotStatusKey(slot)]} />
-              </div>
+                  <TableCell>
+                    <Badge config={offerStatusConfig[slotStatusKey(slot)]} />
+                  </TableCell>
 
-              <div className="flex justify-end gap-2">
-                <Button variant="ghost" size="sm" onClick={() => setEditing({ placement, slot })}>
-                  Edit
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  loading={togglingKey === placement.key}
-                  onClick={() => toggleActive(placement, slot)}
-                >
-                  {slot?.is_active ? 'Turn off' : 'Turn on'}
-                </Button>
-              </div>
-            </div>
-          ))}
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button variant="ghost" size="sm" onClick={() => setEditing({ placement, slot })}>
+                        Edit
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        loading={togglingKey === placement.key}
+                        onClick={() => toggleActive(placement, slot)}
+                      >
+                        {slot?.is_active ? 'Turn off' : 'Turn on'}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       <p className="text-xs text-white/30 mt-4">

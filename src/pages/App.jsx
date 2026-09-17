@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect } from 'react';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import DashboardView from '../components/views/DashboardView';
 import { ToastProvider } from '../components/ui/toast.jsx';
 import FinanceView from '../components/views/FinanceView';
@@ -22,7 +23,16 @@ export default function KeplixAdmin() {
   // expired access token doesn't flash the login screen before the silent
   // refresh below has had a chance to run.
   const [checkingSession, setCheckingSession] = useState(() => !isAdminAuthenticated() && !!getAdminToken());
-  const [activeNav, setActiveNav] = useState('dashboard');
+  // Was `useState('dashboard')`, driving conditional `activeNav === 'x' &&`
+  // renders instead of real routes -- nothing was deep-linkable, bookmarkable,
+  // or reachable via the browser back/forward buttons, and a page reload
+  // always dropped an admin back to the dashboard regardless of where they'd
+  // been. `activeNav` is now derived from the URL itself so the two can never
+  // drift apart; navigating is `navigate()` to a real path, not local state.
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeNav = location.pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
+  const setActiveNav = (id) => navigate(`/${id}`);
   const [bookingFilter, setBookingFilter] = useState('All');
   const [vendorFilter, setVendorFilter] = useState('All');
   const [time, setTime] = useState(new Date());
@@ -96,17 +106,22 @@ export default function KeplixAdmin() {
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          {activeNav === "dashboard" && <DashboardView />}
-          {activeNav === "finance" && <FinanceView />}
-          {activeNav === "vendors" && <VendorsView filter={vendorFilter} setFilter={setVendorFilter} />}
-          {activeNav === "bookings" && <BookingsView filter={bookingFilter} setFilter={setBookingFilter} />}
-          {activeNav === "walkins" && <WalkInJobsView />}
-          {activeNav === "health-components" && <HealthComponentsView />}
-          {activeNav === "offers" && <OffersView />}
-          {activeNav === "analytics" && <AnalyticsView />}
-          {activeNav === "users" && <UsersView />}
-          {activeNav === "blogs" && <BlogsView />}
-          {activeNav === "settings" && <SettingsView />}
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<DashboardView />} />
+            <Route path="/finance" element={<FinanceView />} />
+            <Route path="/vendors" element={<VendorsView filter={vendorFilter} setFilter={setVendorFilter} />} />
+            <Route path="/bookings" element={<BookingsView filter={bookingFilter} setFilter={setBookingFilter} />} />
+            <Route path="/walkins" element={<WalkInJobsView />} />
+            <Route path="/health-components" element={<HealthComponentsView />} />
+            <Route path="/offers" element={<OffersView />} />
+            <Route path="/analytics" element={<AnalyticsView />} />
+            <Route path="/users" element={<UsersView />} />
+            <Route path="/blogs" element={<BlogsView />} />
+            <Route path="/settings" element={<SettingsView />} />
+            {/* Unknown path -- back to a known-good screen rather than a blank page. */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
         </div>
       </div>
     </div>

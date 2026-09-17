@@ -165,8 +165,19 @@ export default function DashboardView() {
         {/* Pending Actions */}
         <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
-            <span className="font-syne text-base font-bold">⚡ Pending Actions</span>
-            <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">5 items</span>
+            <span className="font-syne text-base font-bold flex items-center gap-2">
+              ⚡ Pending Actions
+              {/* Fed by the static `pendingActions` array, not the API -- same
+                  gap as the charts elsewhere on this page: no backend
+                  endpoint exists yet for a cross-entity alert/queue feed
+                  (vendor verification, payout expiry, disputes, low ratings
+                  each live in different tables with no combined query). These
+                  read as real, actionable alerts with real-looking booking
+                  IDs and countdowns, so leaving them unlabeled was worse here
+                  than on a chart. */}
+              <span title="Sample data — the backend has no combined alerts/queue endpoint for this yet." className="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">Sample data</span>
+            </span>
+            <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">{pendingActions.length} items</span>
           </div>
           <div className="px-5 py-1">
             {pendingActions.map((item, i) => (

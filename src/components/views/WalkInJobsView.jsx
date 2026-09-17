@@ -2,6 +2,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { getWalkInJobs, getWalkInAdoption } from '../../services/walkInJobsApi';
 import { walkInJobStatusConfig } from '../../data/config';
 import WalkInJobCard from '../Cards/WalkInJobCard';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../ui/table';
+import Badge from '../ui/Badge.jsx';
 
 const FILTERS = [
   { id: '', label: 'All' },
@@ -10,8 +12,6 @@ const FILTERS = [
   { id: 'completed', label: 'Completed' },
   { id: 'cancelled', label: 'Cancelled' },
 ];
-
-const GRID = 'grid-cols-[1.4fr_1.2fr_1fr_110px_100px]';
 
 const formatDate = (iso) =>
   iso ? new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : '—';
@@ -104,51 +104,64 @@ export default function WalkInJobsView() {
       )}
 
       <div className="rounded-2xl border border-white/10 overflow-hidden">
-        <div className={`grid ${GRID} gap-4 px-5 py-3 bg-white/[0.03] text-xs font-semibold uppercase tracking-wide text-white/40`}>
-          <div>Customer / Vehicle</div>
-          <div>Garage</div>
-          <div>Status</div>
-          <div>Health sheet</div>
-          <div>Date</div>
-        </div>
-
         {loading && <div className="px-5 py-10 text-center text-sm text-white/40">Loading…</div>}
 
         {!loading && jobs.length === 0 && (
           <div className="px-5 py-10 text-center text-sm text-white/40">No walk-in jobs match this filter.</div>
         )}
 
-        {!loading &&
-          jobs.map((job) => {
-            const sc = walkInJobStatusConfig[job.status] || { label: job.status, color: '#fff', bg: '#222' };
-            return (
-              <button
-                key={job.id}
-                onClick={() => setSelectedId(job.id)}
-                className={`w-full text-left grid ${GRID} gap-4 items-center px-5 py-4 border-t border-white/5 hover:bg-white/[0.02] transition-colors`}
-              >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-white">{job.customer_name}</p>
-                  <p className="truncate text-xs text-white/40">
-                    {job.vehicle ? job.vehicle.registration : 'No vehicle recorded'}
-                  </p>
-                </div>
-                <div className="text-sm text-white/60 truncate">
-                  {job.vendor?.vendorProfile?.business_name || '—'}
-                </div>
-                <div>
-                  <span
-                    className="px-2.5 py-1 rounded-lg text-xs font-semibold"
-                    style={{ color: sc.color, background: sc.bg }}
+        {!loading && jobs.length > 0 && (
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-white/[0.03] border-white/10 hover:bg-white/[0.03]">
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Customer / Vehicle</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Garage</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Status</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Health sheet</TableHead>
+                <TableHead className="text-xs font-semibold uppercase tracking-wide text-white/40">Date</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {jobs.map((job) => {
+                const sc = walkInJobStatusConfig[job.status] || { label: job.status, color: '#fff', bg: '#222' };
+                return (
+                  // The whole row opens the detail card (was a <button> wrapping
+                  // a div-grid -- a <button> isn't valid <tr> content). role +
+                  // tabIndex + onKeyDown keep it keyboard-operable as a real row.
+                  <TableRow
+                    key={job.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`View walk-in job for ${job.customer_name}`}
+                    onClick={() => setSelectedId(job.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedId(job.id);
+                      }
+                    }}
+                    className="cursor-pointer border-white/5 hover:bg-white/[0.02]"
                   >
-                    {sc.label}
-                  </span>
-                </div>
-                <div className="text-sm text-white/50">{job.healthSheet ? 'Submitted' : '—'}</div>
-                <div className="text-sm text-white/50">{formatDate(job.createdAt)}</div>
-              </button>
-            );
-          })}
+                    <TableCell className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-white">{job.customer_name}</p>
+                      <p className="truncate text-xs text-white/40">
+                        {job.vehicle ? job.vehicle.registration : 'No vehicle recorded'}
+                      </p>
+                    </TableCell>
+                    <TableCell className="text-sm text-white/60 truncate">
+                      {job.vendor?.vendorProfile?.business_name || '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge config={sc} />
+                    </TableCell>
+                    <TableCell className="text-sm text-white/50">{job.healthSheet ? 'Submitted' : '—'}</TableCell>
+                    <TableCell className="text-sm text-white/50">{formatDate(job.createdAt)}</TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
       </div>
 
       <div className="flex items-center justify-between mt-4">
