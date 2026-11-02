@@ -24,6 +24,7 @@ vi.mock('../services/bookingsApi', () => ({
   getBookings: vi.fn(),
   getBookingMetrics: vi.fn(),
   forceCompleteBooking: vi.fn(),
+  resolveDispute: vi.fn(),
 }));
 vi.mock('../services/blogsApi.js', () => ({
   getBlogPosts: vi.fn(),

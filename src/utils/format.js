@@ -17,3 +17,18 @@ export const formatINR = (value) => {
   const n = Number(value);
   return `₹${Number.isFinite(n) ? n.toLocaleString("en-IN", { maximumFractionDigits: 2 }) : "0"}`;
 };
+
+/**
+ * Date + time for an ISO timestamp from the API (e.g. Booking.disputed_at).
+ * Falls back to the raw value rather than rendering "Invalid Date".
+ *
+ * @param {unknown} value
+ * @returns {string} e.g. "20 Oct 2026, 2:30 pm", or "" for null/undefined.
+ */
+export const formatDateTime = (value) => {
+  if (value == null || value === "") return "";
+  const d = new Date(value);
+  return Number.isNaN(d.getTime())
+    ? String(value)
+    : d.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+};

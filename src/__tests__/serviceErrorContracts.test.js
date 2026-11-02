@@ -3,10 +3,14 @@
  * list endpoints rely on. Several views render `list.map(...)` unconditionally,
  * so a refactor that turned any of these into a throw would crash the view.
  *
- * getVendors, getUsers, and getBookings all share the same contract: only
- * SESSION_EXPIRED (a dead session that needs re-login) propagates as a
- * throw; every other plain failure (network, 500, bad payload, no token)
- * degrades to an empty list.
+ * getVendors and getUsers share the same contract: only SESSION_EXPIRED (a
+ * dead session that needs re-login) propagates as a throw; every other plain
+ * failure (network, 500, bad payload, no token) degrades to an empty list.
+ *
+ * getBookings USED to share it and deliberately no longer does: an outage
+ * rendered as "No bookings found" with no retry. Its only callers
+ * (BookingsView via useApiResource, GlobalSearch via Promise.allSettled)
+ * both handle a throw, so it now has its own "throws" block below.
  */
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
@@ -46,7 +50,6 @@ afterEach(() => {
 describe.each([
   ['getVendors', () => vendorsApi.getVendors()],
   ['getUsers', () => usersApi.getUsers()],
-  ['getBookings', () => bookingsApi.getBookings()],
 ])('%s empty-array contract', (_name, call) => {
   // Both calls now go through authFetch, which retries a 401 once after
   // attempting to renew the token. With no refresh token stored, the retry
@@ -82,6 +85,57 @@ describe.each([
   it('passes an array payload through unchanged', async () => {
     fetch.mockResolvedValue(ok([{ id: 1 }, { id: 2 }]));
     await expect(call()).resolves.toHaveLength(2);
+  });
+});
+
+describe('getBookings throws instead of degrading to []', () => {
+  it('RE-THROWS SESSION_EXPIRED on a 401', async () => {
+    fetch.mockResolvedValue(bad(401));
+    await expect(bookingsApi.getBookings()).rejects.toMatchObject({ code: 'SESSION_EXPIRED' });
+  });
+
+  it('throws the server message on a 500', async () => {
+    fetch.mockResolvedValue(bad(500, { message: 'Bookings fetch failed' }));
+    await expect(bookingsApi.getBookings()).rejects.toThrow('Bookings fetch failed');
+  });
+
+  it('throws when fetch rejects (network failure)', async () => {
+    fetch.mockRejectedValue(new Error('network down'));
+    await expect(bookingsApi.getBookings()).rejects.toThrow('network down');
+  });
+
+  it('throws when no admin token is stored, without hitting the network', async () => {
+    localStorage.removeItem('adminToken');
+    await expect(bookingsApi.getBookings()).rejects.toThrow(/log in/i);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('throws when the payload is not an array', async () => {
+    fetch.mockResolvedValue(ok({ data: [{ id: 1 }] }));
+    await expect(bookingsApi.getBookings()).rejects.toThrow(/unexpected/i);
+  });
+
+  it('passes an array payload through unchanged, with the type filter in the query', async () => {
+    fetch.mockResolvedValue(ok([{ id: 1 }, { id: 2 }]));
+    await expect(bookingsApi.getBookings('disputed', 2, 10)).resolves.toHaveLength(2);
+    expect(String(fetch.mock.calls[0][0])).toContain('type=disputed');
+  });
+});
+
+describe('resolveDispute', () => {
+  it('POSTs the reason to the dispute/resolve route', async () => {
+    fetch.mockResolvedValue(ok({ booking: { id: 7, status: 'cancelled' } }));
+    await expect(bookingsApi.resolveDispute(7, 'Vendor never showed up')).resolves.toMatchObject({
+      booking: { status: 'cancelled' },
+    });
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toContain('/admin/bookings/7/dispute/resolve');
+    expect(JSON.parse(init.body)).toEqual({ reason: 'Vendor never showed up' });
+  });
+
+  it('throws the server message on a 400', async () => {
+    fetch.mockResolvedValue(bad(400, { message: 'Please provide a detailed reason (minimum 10 characters)' }));
+    await expect(bookingsApi.resolveDispute(7, 'short')).rejects.toThrow(/minimum 10/);
   });
 });
 

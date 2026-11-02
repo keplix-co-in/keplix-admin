@@ -1,27 +1,17 @@
 import { useState } from 'react';
-import { bookingStatusConfig } from "../../data/config";
+import { bookingFilters, bookingStatusConfig } from "../../data/config";
 import { getBookings } from "../../services/bookingsApi";
 import BookingCard from "../Cards/BookingCard";
 import { formatINR } from "../../utils/format.js";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
 import Badge from "../ui/Badge.jsx";
+import ErrorState from "../ui/ErrorState.jsx";
 import { useApiResource } from "../../hooks/useApiResource";
 
 const PAGE_SIZE = 10;
 
-const keyMap = {
-  "All": "all",
-  "Completed": "completed",
-  "In Progress": "inprogress",
-  "Confirmed": "confirmed",
-  "Disputed": "disputed",
-  "Cancelled": "cancelled"
-};
-
 export default function BookingsView({ filter, setFilter }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
-
-  const filters = ["All", "Completed", "In Progress", "Confirmed", "Disputed", "Cancelled"];
 
   const {
     data: bookings,
@@ -33,9 +23,12 @@ export default function BookingsView({ filter, setFilter }) {
     refetch: fetchBookings,
   } = useApiResource(
     async (page) => {
-      const filterType = keyMap[filter] || "all";
-      const data = await getBookings(filterType, page, PAGE_SIZE);
-      return Array.isArray(data) ? data : [];
+      // Filter chips live in data/config.js (bookingFilters) next to the
+      // status badges, so a new status gets its filter and badge together.
+      const filterType = bookingFilters.find((f) => f.label === filter)?.type || "all";
+      // getBookings now throws on failure; useApiResource turns that into
+      // `error`, rendered below with a Retry.
+      return getBookings(filterType, page, PAGE_SIZE);
     },
     [filter],
     // Was untracked `totalCount = data.length`, which is not a total and
@@ -50,22 +43,27 @@ export default function BookingsView({ filter, setFilter }) {
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       <div className="flex gap-2 mb-5 flex-wrap">
-        {filters.map(f => (
+        {bookingFilters.map(({ label }) => (
           <button 
-            key={f} 
-            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === f ? " text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`}
-            onClick={() => setFilter(f)}
+            key={label} 
+            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === label ? " text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`}
+            onClick={() => setFilter(label)}
           >
-            {f}
+            {label}
           </button>
         ))}
       </div>
 
-      {error && (
-        <div className="bg-brand-red/10 border border-brand-red/30 rounded-lg p-4 text-brand-red mb-4">
-          <p className="font-semibold">Error loading bookings</p>
-          <p className="text-sm">{error}</p>
-        </div>
+      {/* Was a message box with no retry, and it rendered ABOVE the
+          "No bookings found" empty state, so a failure still looked like an
+          empty list. Now it offers Retry, and the empty state is suppressed
+          while there is an error. */}
+      {error && !loading && (
+        <ErrorState
+          className="mb-4"
+          message={`Couldn't load bookings: ${error}`}
+          onRetry={fetchBookings}
+        />
       )}
 
       <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
@@ -74,6 +72,8 @@ export default function BookingsView({ filter, setFilter }) {
             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-brand-red"></div>
             <p className="mt-2">Loading bookings...</p>
           </div>
+        ) : error ? (
+          <div className="py-8 text-center text-brand-gray-700">Bookings are unavailable until the request above succeeds.</div>
         ) : filtered.length === 0 ? (
           <div className="py-8 text-center text-brand-gray-700">No bookings found</div>
         ) : (
@@ -148,7 +148,7 @@ export default function BookingsView({ filter, setFilter }) {
         <BookingCard
           booking={selectedBooking}
           onClose={() => setSelectedBooking(null)}
-          onForceCompleted={fetchBookings}
+          onChanged={fetchBookings}
         />
       )}
     </div>
