@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { userStatusConfig } from "../../data/config";
 
 export default function UserCard({ user, onClose }) {
+  const [imageFailed, setImageFailed] = useState(false);
   if (!user) return null;
   const sc = userStatusConfig[user.status] || { label: user.status.charAt(0).toUpperCase() + user.status.slice(1), color: '#fff', bg: '#222', border: 'rgba(255,255,255,0.1)' };
+  const showImage = user.profileImage && !imageFailed;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease_forwards]">
@@ -16,9 +18,18 @@ export default function UserCard({ user, onClose }) {
         </button>
         
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-2xl font-bold border border-white/10 text-white shadow-inner">
-            {user.name.charAt(0)}
-          </div>
+          {showImage ? (
+            <img
+              src={user.profileImage}
+              alt={user.name}
+              className="w-16 h-16 rounded-full object-cover border border-white/10 shadow-inner"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-2xl font-bold border border-white/10 text-white shadow-inner">
+              {user.name.charAt(0)}
+            </div>
+          )}
           <div>
             <h2 className="text-xl font-bold text-white">{user.name}</h2>
             <p className="text-sm text-[#888] font-mono">ID: {user.id}</p>
@@ -42,11 +53,11 @@ export default function UserCard({ user, onClose }) {
         <div className="space-y-4 pt-4 border-t border-white/10">
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Email</span>
-            <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded text-xs">{user.email}</span>
+            <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded text-xs">{user.email || '—'}</span>
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Phone</span>
-            <span className="text-white font-medium font-mono bg-white/5 px-2 py-0.5 rounded text-xs">{user.phone}</span>
+            <span className="text-white font-medium font-mono bg-white/5 px-2 py-0.5 rounded text-xs">{user.phone || '—'}</span>
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Member Since</span>

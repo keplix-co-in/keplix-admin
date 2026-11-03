@@ -3,21 +3,16 @@
  * Handles all booking-related API calls
  */
 
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from './apiConfig.js';
+import { authFetch } from './authApi.js';
 
 /**
  * Get booking metrics (counts by status)
  */
 export const getBookingMetrics = async () => {
   try {
-    const token = localStorage.getItem('adminToken');
-    
-    const response = await fetch(`${API_URL}/admin/bookings/counts`, {
+    const response = await authFetch(`${API_URL}/admin/bookings/counts`, {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
     });
 
     if (!response.ok) {
@@ -32,165 +27,108 @@ export const getBookingMetrics = async () => {
 };
 
 /**
- * Get bookings with filters and pagination
- * @param {string} type - Filter type: all, completed, inprogress, confirmed, cancelled, requested
+ * Get bookings with filters and pagination.
+ *
+ * THROWS on failure (network, non-2xx, no session) rather than resolving to
+ * []. It used to swallow every non-session error into an empty list, so a
+ * backend outage rendered as "No bookings found" -- indistinguishable from a
+ * genuinely empty filter, with no retry. BookingsView (via useApiResource)
+ * now shows the error with a Retry button; GlobalSearch already uses
+ * Promise.allSettled, so a throw there only blanks the bookings column.
+ *
+ * @param {string} type - `?type=` filter, see `bookingFilters` in
+ *   data/config.js: all, pending, confirmed, inprogress, service_completed,
+ *   completed (service_completed + user_confirmed), disputed, cancelled,
+ *   rejected, refunded. (`requested` is the backend's older alias for
+ *   pending; nothing here sends it any more.)
  * @param {number} page - Page number (1-indexed)
  * @param {number} limit - Items per page
  */
 export const getBookings = async (type = 'all', page = 1, limit = 10) => {
-  try {
-    const token = localStorage.getItem('adminToken');
-    
-    if (!token) {
-      console.warn('⚠️ No admin token found in localStorage');
-      // Return mock data for testing
-      return [
-        {
-          id: 'TEST-001',
-          customer: 'Test Customer',
-          phone: '+919999999999',
-          vendor: 'Test Vendor',
-          service: 'Test Service',
-          slot: '2024-04-06 10:00 AM',
-          amount: 500,
-          fee: 50,
-          status: 'confirmed'
-        }
-      ];
-    }
-
-    const filterType = type || 'all';
-    const queryParams = new URLSearchParams({
-      type: filterType,
-      page: String(page),
-      limit: String(limit)
-    });
-
-    const url = `${API_URL}/admin/bookings?${queryParams}`;
-    console.log(`📡 API Request: ${url}`);
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    console.log(`📊 Response Status: ${response.status}`);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`❌ API Error: ${response.status}`, errorText);
-      
-      // Return empty array instead of throwing
-      if (response.status === 401) {
-        console.log('🔑 Authentication failed - returning empty array');
-        return [];
-      }
-      
-      throw new Error(`API Error: ${response.status}`);
-    }
-
-    const data = await response.json();
-    console.log(`✅ Bookings loaded (${data?.length || 0} items):`, data);
-    return Array.isArray(data) ? data : [];
-  } catch (error) {
-    console.error('❌ Error fetching bookings:', error);
-    // Return empty array on error instead of throwing
-    return [];
+  // No token means no session: surface it as an error the view can show,
+  // instead of quietly rendering an empty list (see the doc comment above).
+  if (!localStorage.getItem('adminToken')) {
+    throw new Error('Not signed in. Please log in again.');
   }
+
+  const queryParams = new URLSearchParams({
+    type: type || 'all',
+    page: String(page),
+    limit: String(limit)
+  });
+
+  // authFetch handles a 401 itself: it silently retries once after
+  // renewing the token, and only throws SESSION_EXPIRED if that also
+  // fails -- that error propagates unchanged.
+  const response = await authFetch(`${API_URL}/admin/bookings?${queryParams}`, { method: 'GET' });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    console.error(`Bookings API error: ${response.status}`, err);
+    throw new Error(err.message || `Failed to load bookings (${response.status})`);
+  }
+
+  const data = await response.json();
+  // A 200 with a non-array body is a contract break, not "no bookings".
+  if (!Array.isArray(data)) {
+    throw new Error('Unexpected response from the bookings API.');
+  }
+  return data;
 };
 
 /**
- * Get single booking by ID
- * @param {string} bookingId - Booking ID
+ * Force-complete a booking without a submitted health sheet — the
+ * escape hatch if the mandatory-inspection gate misfires. Does NOT release
+ * escrow itself (that only happens on the customer's own confirmation); it
+ * only unblocks the booking's status. See the backend controller for the
+ * full safety-boundary note.
+ * @param {string|number} bookingId
+ * @param {string} reason - required context for the audit log
  */
-export const getBookingById = async (bookingId) => {
+export const forceCompleteBooking = async (bookingId, reason) => {
   try {
-    const token = localStorage.getItem('adminToken');
-    
-    const response = await fetch(`${API_URL}/admin/bookings/${bookingId}`, {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch booking: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching booking details:', error);
-    throw error;
-  }
-};
-
-/**
- * Update booking status
- * @param {string} bookingId - Booking ID
- * @param {string} status - New status
- */
-export const updateBookingStatus = async (bookingId, status) => {
-  try {
-    const token = localStorage.getItem('adminToken');
-    
-    const response = await fetch(`${API_URL}/admin/bookings/${bookingId}`, {
-      method: 'PATCH',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ status })
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to update booking: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error updating booking status:', error);
-    throw error;
-  }
-};
-
-/**
- * Cancel booking
- * @param {string} bookingId - Booking ID
- * @param {string} reason - Cancellation reason
- */
-export const cancelBooking = async (bookingId, reason = '') => {
-  try {
-    const token = localStorage.getItem('adminToken');
-    
-    const response = await fetch(`${API_URL}/admin/bookings/${bookingId}/cancel`, {
+    const response = await authFetch(`${API_URL}/admin/bookings/${bookingId}/force-complete`, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({ reason })
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to cancel booking: ${response.status}`);
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.message || `Failed to force-complete booking: ${response.status}`);
     }
 
     return await response.json();
   } catch (error) {
-    console.error('Error cancelling booking:', error);
+    console.error('Error force-completing booking:', error);
     throw error;
   }
+};
+
+/**
+ * Resolve a disputed booking in the CUSTOMER's favour. The backend moves the
+ * booking to `cancelled` and notifies both sides, but deliberately does NOT
+ * refund -- that is a separate call to /admin/finance/payments/:id/refund
+ * (see RefundModal). super_admin only.
+ * @param {string|number} bookingId
+ * @param {string} reason - min 10 characters (enforced server-side too)
+ */
+export const resolveDispute = async (bookingId, reason) => {
+  const response = await authFetch(`${API_URL}/admin/bookings/${bookingId}/dispute/resolve`, {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `Failed to resolve dispute: ${response.status}`);
+  }
+
+  return await response.json();
 };
 
 export default {
   getBookingMetrics,
   getBookings,
-  getBookingById,
-  updateBookingStatus,
-  cancelBooking
+  forceCompleteBooking,
+  resolveDispute
 };

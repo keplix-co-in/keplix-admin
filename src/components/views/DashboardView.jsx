@@ -4,7 +4,13 @@ import {
 } from "recharts";
 import { useState, useEffect } from "react";
 import { revenueData, cityData, serviceData } from "../../data";
-import { pendingActions, kpis } from "../../data/DashBoardMock";
+// `kpis` (the mock KPI set) is deliberately no longer imported -- it was the
+// silent fallback that rendered fabricated figures badged "Live" whenever the
+// metrics call failed.
+import { pendingActions } from "../../data/DashBoardMock";
+import { API_URL } from "../../services/apiConfig.js";
+import { authFetch } from "../../services/authApi.js";
+import { formatINR } from "../../utils/format.js";
 
 const ChartTooltip = ({ active, payload, label }) => {
   if (!active || !payload?.length) return null;
@@ -23,42 +29,76 @@ const ChartTooltip = ({ active, payload, label }) => {
 export default function DashboardView() {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  const fetchDashboardData = async () => {
+    try {
+      setError(null);
+
+      // authFetch renews an expired access token and retries once itself,
+      // so a merely-expired-but-renewable session now recovers silently.
+      // It throws SESSION_EXPIRED (with a friendly message) only once
+      // re-login is actually required, which the catch below surfaces.
+      const response = await authFetch(`${API_URL}/admin/dashboard/metrics`);
+
+      // A non-OK response used to be ignored entirely -- there was no `else`
+      // and the catch only logged, so `metrics` stayed null and the render
+      // below fell through to the HARDCODED MOCK KPIs, each badged "Live" in
+      // green. On a dead backend the dashboard confidently showed
+      // "Today's GMV ₹94,000 / Bookings Today 52" and an operator had no way
+      // to tell that from a real trading day. Fabricated numbers presented as
+      // live business data is the most dangerous failure this panel had.
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}`);
+      }
+
+      setMetrics(await response.json());
+    } catch (err) {
+      console.error("Failed to fetch dashboard metrics:", err);
+      setMetrics(null);
+      setError(err?.message || 'Could not load dashboard metrics.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchDashboardData = async () => {
-      try {
-        const token = localStorage.getItem('adminToken');
-        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-        
-        const response = await fetch(`${API_URL}/admin/dashboard/metrics`, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setMetrics(data);
-        }
-      } catch (error) {
-        console.error("Failed to fetch dashboard metrics:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
     fetchDashboardData();
   }, []);
 
   const liveKpis = metrics ? [
-    { label: "Today's GMV", value: `₹${(metrics.todayGMV || 0).toLocaleString("en-IN")}`, icon: "💰", delta: "Live", color: "#10b981" },
-    { label: "Platform Revenue", value: `₹${(metrics.platformRevenue || 0).toLocaleString("en-IN")}`, icon: "📈", delta: "Live", color: "#10b981" },
+    { label: "Today's GMV", value: formatINR(metrics.todayGMV), icon: "💰", delta: "Live", color: "#10b981" },
+    { label: "Platform Revenue", value: formatINR(metrics.platformRevenue), icon: "📈", delta: "Live", color: "#10b981" },
     { label: "Bookings Today", value: metrics.bookingsToday || 0, icon: "📦", delta: "Live", color: "#3b82f6" },
     { label: "Active Vendors", value: metrics.activeVendors || 0, icon: "🏪", delta: "Live", color: "#8b5cf6" },
     { label: "New Users Today", value: metrics.newUsersToday || 0, icon: "👥", delta: "Live", color: "#6366f1" },
-    { label: "Pending Payouts", value: `₹${(metrics.pendingPayouts || 0).toLocaleString("en-IN")}`, icon: "⏳", delta: "Action", color: "#ff3d3d", alert: true }
-  ] : kpis;
+    { label: "Pending Payouts", value: formatINR(metrics.pendingPayouts), icon: "⏳", delta: "Action", color: "#ff3d3d", alert: true }
+  ] : null;
 
   if (loading) {
     return <div className="text-brand-gray-700 p-6 animate-pulse font-semibold">Loading Live Dashboard Metrics...</div>;
+  }
+
+  // Fail visibly instead of silently substituting `kpis` (the mock).
+  if (error || !liveKpis) {
+    return (
+      <div className="animate-[fadeInUp_0.3s_ease_forwards] p-6">
+        <div className="bg-brand-gray-100 border border-brand-red/25 rounded-[18px] p-8 text-center max-w-md mx-auto">
+          <div className="text-2xl mb-3">⚠️</div>
+          <div className="text-white font-semibold mb-1.5">Couldn&apos;t load dashboard metrics</div>
+          <div className="text-xs text-brand-gray-700 mb-5">
+            {error || 'No metrics returned.'} No figures are shown rather than
+            risk displaying stale or placeholder numbers as live.
+          </div>
+          <button
+            onClick={() => { setLoading(true); fetchDashboardData(); }}
+            className="py-2 px-5 rounded-lg text-xs font-semibold bg-brand-red text-white hover:bg-brand-red/85 transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
  
   return (
@@ -81,9 +121,15 @@ export default function DashboardView() {
       {/* Charts Row */}
       <div className="grid grid-cols-[1fr_340px] gap-4 mb-5">
         {/* Revenue Chart */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
-            <span className="font-syne text-base font-bold">Revenue vs GMV — Last 7 Days</span>
+            <span className="font-syne text-base font-bold flex items-center gap-2">
+              Revenue vs GMV — Last 7 Days
+              {/* Fed by the static `revenueData` array, not the API. The KPI
+                  tiles above ARE live, which made this the most misleading
+                  pairing on the page. */}
+              <span title="Sample data — the backend has no time-series aggregation endpoint for this yet." className="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">Sample data</span>
+            </span>
             <div className="flex gap-4">
               <div className="flex items-center gap-1.5 text-xs text-brand-gray-800">
                 <div className="w-2 h-2 rounded-sm bg-brand-red/40" /> GMV
@@ -117,10 +163,21 @@ export default function DashboardView() {
         </div>
 
         {/* Pending Actions */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
-            <span className="font-syne text-base font-bold">⚡ Pending Actions</span>
-            <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">5 items</span>
+            <span className="font-syne text-base font-bold flex items-center gap-2">
+              ⚡ Pending Actions
+              {/* Fed by the static `pendingActions` array, not the API -- same
+                  gap as the charts elsewhere on this page: no backend
+                  endpoint exists yet for a cross-entity alert/queue feed
+                  (vendor verification, payout expiry, disputes, low ratings
+                  each live in different tables with no combined query). These
+                  read as real, actionable alerts with real-looking booking
+                  IDs and countdowns, so leaving them unlabeled was worse here
+                  than on a chart. */}
+              <span title="Sample data — the backend has no combined alerts/queue endpoint for this yet." className="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">Sample data</span>
+            </span>
+            <span className="text-xs font-bold text-yellow-400 bg-yellow-500/10 px-2 py-0.5 rounded-full border border-yellow-500/20">{pendingActions.length} items</span>
           </div>
           <div className="px-5 py-1">
             {pendingActions.map((item, i) => (
@@ -139,9 +196,13 @@ export default function DashboardView() {
       {/* Bottom Row */}
       <div className="grid grid-cols-2 gap-4">
         {/* City Performance */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">Top Cities</span>
+            {/* Charted from a static array in src/data -- no endpoint feeds
+                this. Labelled rather than removed so the layout is ready when
+                a real aggregation endpoint exists. */}
+            <span title="Sample data — the backend has no time-series aggregation endpoint for this yet." className="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">Sample data</span>
           </div>
           <div className="px-2 py-3">
             <ResponsiveContainer width="100%" height={180}>
@@ -162,9 +223,10 @@ export default function DashboardView() {
         </div>
 
         {/* Service Mix */}
-        <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">
+        <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
           <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
             <span className="font-syne text-base font-bold">Service Mix</span>
+            <span title="Sample data — the backend has no aggregation endpoint for this yet." className="text-[9px] font-bold uppercase tracking-wider text-amber-400/90 bg-amber-400/10 border border-amber-400/20 rounded-full px-2 py-0.5">Sample data</span>
           </div>
           <div className="p-3 pl-5 flex items-center gap-6">
             <ResponsiveContainer width={160} height={160}>

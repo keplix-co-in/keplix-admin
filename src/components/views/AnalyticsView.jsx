@@ -5,6 +5,25 @@ import { retentionData } from "../../data/AnalyticsViewMock";
 export default function AnalyticsView() {
   return (
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
+      {/* Every figure on this screen comes from static arrays in src/data --
+          there is not a single fetch in this file. Presented without this
+          notice, the funnel, retention curve and city table read as real
+          business intelligence and could be acted on. The backend has no
+          analytics aggregation endpoints yet; building them is what makes this
+          page real, and the layout is kept so it can be wired later. */}
+      <div className="mb-4 flex items-start gap-3 rounded-2xl border border-amber-400/25 bg-amber-400/[0.07] px-5 py-3.5">
+        <span className="text-base leading-none mt-0.5">⚠️</span>
+        <div>
+          <div className="text-xs font-bold text-amber-300 uppercase tracking-wider mb-0.5">
+            Sample data — not your business
+          </div>
+          <div className="text-xs text-amber-200/70">
+            This page is a layout preview. Nothing here is fetched from the
+            platform, so these numbers should not be used for any decision.
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Booking Funnel */}
         <div className="bg-[#141420] rounded-[20px] border border-white/5 overflow-hidden">

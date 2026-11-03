@@ -3,7 +3,7 @@
  * Handles admin login and authentication
  */
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { API_URL } from './apiConfig.js';
 
 /**
  * Login admin user
@@ -12,8 +12,6 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
  */
 export const adminLogin = async (email, password) => {
   try {
-    console.log(`📡 Admin Login Request: ${API_URL}/admin/auth/login`);
-
     const response = await fetch(`${API_URL}/admin/auth/login`, {
       method: 'POST',
       headers: {
@@ -25,26 +23,32 @@ export const adminLogin = async (email, password) => {
       })
     });
 
-    console.log(`📊 Response Status: ${response.status}`);
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData?.message || `Login failed: ${response.status}`;
-      console.error(`❌ Login Error:`, errorMessage);
       throw new Error(errorMessage);
     }
 
     const data = await response.json();
-    console.log(`✅ Login successful:`, data);
 
-    // Store tokens and user data
-    if (data.token) {
-      localStorage.setItem('adminToken', data.token);
-      console.log('✅ Admin token saved to localStorage');
+    // Do not log `data` here — it contains the admin's bearer/refresh tokens
+    // in plaintext, which would otherwise land in the browser console.
+
+    // Store tokens and user data.
+    //
+    // These MUST match the field names the backend actually returns —
+    // controllers/Admin/authController.js responds with
+    // { user, accessToken, refreshToken }. This previously read data.token /
+    // data.refresh, which are never present, so adminToken was never stored:
+    // login appeared to succeed (App.jsx sets its state from the callback,
+    // not from the token) while every subsequent request went out as
+    // "Bearer null" and 401'd, leaving every screen silently empty.
+    if (data.accessToken) {
+      localStorage.setItem('adminToken', data.accessToken);
     }
 
-    if (data.refresh) {
-      localStorage.setItem('adminRefreshToken', data.refresh);
+    if (data.refreshToken) {
+      localStorage.setItem('adminRefreshToken', data.refreshToken);
     }
 
     if (data.user) {
@@ -53,22 +57,159 @@ export const adminLogin = async (email, password) => {
 
     return data;
   } catch (error) {
-    console.error('❌ Error during login:', error);
+    console.error('Error during login:', error.message);
     throw error;
   }
 };
 
 /**
+ * Exchange the stored refresh token for a fresh access token.
+ *
+ * The access token lives 15 minutes and nothing renewed it, so the admin panel
+ * started 401ing on every request after a short idle and the only way back was
+ * a manual re-login.
+ *
+ * The backend ROTATES: it returns a new refresh token and invalidates the old
+ * one, treating a second use of a spent token as theft and clearing the
+ * session. So the new refresh token must be stored, and concurrent refreshes
+ * must be collapsed into one — two parallel 401s each redeeming the same token
+ * would trip that reuse detection and log the admin out.
+ *
+ * @returns {Promise<string|null>} the new access token, or null if re-login is required
+ */
+let refreshInFlight = null;
+
+export const refreshAdminToken = () => {
+  if (refreshInFlight) return refreshInFlight;
+
+  const refreshToken = localStorage.getItem('adminRefreshToken');
+  if (!refreshToken) return Promise.resolve(null);
+
+  refreshInFlight = fetch(`${API_URL}/admin/auth/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ refreshToken }),
+  })
+    .then(async (response) => {
+      if (!response.ok) {
+        // Expired, revoked, or reuse detected — none are recoverable here.
+        // Awaited so the local session is definitely cleared before callers
+        // act on the null return. The server-side revoke call inside will most
+        // likely 401 (the token the server just rejected is the same one it
+        // sends), which adminLogout handles — local cleanup still happens.
+        await adminLogout();
+        return null;
+      }
+      const data = await response.json();
+      if (!data.accessToken) return null;
+
+      localStorage.setItem('adminToken', data.accessToken);
+      if (data.refreshToken) {
+        localStorage.setItem('adminRefreshToken', data.refreshToken);
+      }
+      return data.accessToken;
+    })
+    .catch(() => null)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+
+  return refreshInFlight;
+};
+
+/**
+ * fetch() for admin endpoints: attaches the bearer token, and on a 401 renews
+ * it once and retries. One retry only — if the refreshed token is also
+ * rejected, the session is genuinely gone and retrying would loop.
+ *
+ * Throws SESSION_EXPIRED when re-login is required, so callers can surface it
+ * rather than showing a misleading "failed to save".
+ */
+export const authFetch = async (url, options = {}) => {
+  const send = () =>
+    fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+
+  return sendWithRefresh(send);
+};
+
+/**
+ * Same 401-retry/token-refresh behavior as authFetch, but does NOT force
+ * Content-Type: application/json — for multipart/FormData bodies (e.g. blog
+ * post cover image uploads), where the browser must set its own Content-Type
+ * with the multipart boundary. Without this, callers with FormData bodies had
+ * to fall back to plain fetch() and lost the automatic refresh-on-401 retry
+ * that every other admin request gets.
+ */
+export const authFetchRaw = async (url, options = {}) => {
+  const send = () =>
+    fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: `Bearer ${localStorage.getItem('adminToken')}`,
+      },
+    });
+
+  return sendWithRefresh(send);
+};
+
+const sendWithRefresh = async (send) => {
+  let response = await send();
+  if (response.status !== 401) return response;
+
+  const renewed = await refreshAdminToken();
+  if (!renewed) {
+    const error = new Error('Your session has expired. Please log in again.');
+    error.code = 'SESSION_EXPIRED';
+    throw error;
+  }
+
+  response = await send();
+  if (response.status === 401) {
+    const error = new Error('Your session has expired. Please log in again.');
+    error.code = 'SESSION_EXPIRED';
+    throw error;
+  }
+  return response;
+};
+
+/**
  * Logout admin user
  */
-export const adminLogout = () => {
+export const adminLogout = async () => {
+  // Revoke the refresh token SERVER-side before clearing local storage.
+  //
+  // This used to only clear localStorage. The backend's POST /admin/auth/logout
+  // (routes/Admin/authAdmin.js) sets admin.refreshToken = null, and it was
+  // never being called -- so after an admin "logged out", their refresh token
+  // remained valid on the server until it expired on its own. Anyone holding a
+  // copy of it could keep minting fresh access tokens.
+  const refreshToken = localStorage.getItem('adminRefreshToken');
+
   try {
+    if (refreshToken) {
+      await fetch(`${API_URL}/admin/auth/logout`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refreshToken }),
+      });
+    }
+  } catch (error) {
+    // Network failure must not trap the admin in a logged-in UI -- the local
+    // session is still cleared below. The server-side token will expire on its
+    // own schedule.
+    console.error('Server-side logout failed; clearing local session anyway:', error);
+  } finally {
     localStorage.removeItem('adminToken');
     localStorage.removeItem('adminRefreshToken');
     localStorage.removeItem('adminUser');
-    console.log('✅ Admin logged out');
-  } catch (error) {
-    console.error('Error during logout:', error);
   }
 };
 
@@ -88,10 +229,24 @@ export const getAdminUser = () => {
 };
 
 /**
- * Check if admin is authenticated
+ * Check if admin is authenticated. Verifies the stored token is a
+ * well-formed JWT and not expired — presence alone is not enough, since a
+ * stale or hand-edited localStorage value would otherwise render the app
+ * as "logged in" until an API call eventually 401s.
  */
 export const isAdminAuthenticated = () => {
-  return !!getAdminToken();
+  const token = getAdminToken();
+  if (!token) return false;
+
+  try {
+    const payloadBase64 = token.split('.')[1];
+    if (!payloadBase64) return false;
+    const payload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload.exp) return true; // no expiry claim — treat presence as valid
+    return payload.exp * 1000 > Date.now();
+  } catch {
+    return false;
+  }
 };
 
 export default {
@@ -99,5 +254,8 @@ export default {
   adminLogout,
   getAdminToken,
   getAdminUser,
-  isAdminAuthenticated
+  isAdminAuthenticated,
+  refreshAdminToken,
+  authFetch,
+  authFetchRaw
 };

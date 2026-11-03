@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { vendorStatusConfig } from "../../data/config";
 
 export default function VendorCard({ vendor, onClose }) {
+  const [imageFailed, setImageFailed] = useState(false);
   if (!vendor) return null;
   const sc = vendorStatusConfig[vendor.status] || { label: vendor.status.charAt(0).toUpperCase() + vendor.status.slice(1), color: '#fff', bg: '#222', border: 'rgba(255,255,255,0.1)' };
+  const showImage = vendor.profileImage && !imageFailed;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-[fadeIn_0.2s_ease_forwards]">
@@ -16,9 +18,18 @@ export default function VendorCard({ vendor, onClose }) {
         </button>
         
         <div className="flex items-center gap-4 mb-6">
-          <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-2xl font-bold border border-white/10 text-white shadow-inner">
-            {vendor.name.charAt(0)}
-          </div>
+          {showImage ? (
+            <img
+              src={vendor.profileImage}
+              alt={vendor.name}
+              className="w-16 h-16 rounded-full object-cover border border-white/10 shadow-inner"
+              onError={() => setImageFailed(true)}
+            />
+          ) : (
+            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center text-2xl font-bold border border-white/10 text-white shadow-inner">
+              {vendor.name.charAt(0)}
+            </div>
+          )}
           <div>
             <h2 className="text-xl font-bold text-white">{vendor.name}</h2>
             <p className="text-sm text-[#888]">ID: {vendor.id} • {vendor.category || 'Service Provider'}</p>
@@ -43,6 +54,10 @@ export default function VendorCard({ vendor, onClose }) {
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Owner</span>
             <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded">{vendor.owner || '—'}</span>
+          </div>
+          <div className="flex justify-between text-sm items-center">
+            <span className="text-[#888] font-medium">Email</span>
+            <span className="text-white font-medium bg-white/5 px-2 py-0.5 rounded text-xs">{vendor.email || '—'}</span>
           </div>
           <div className="flex justify-between text-sm items-center">
             <span className="text-[#888] font-medium">Location</span>
