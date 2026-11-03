@@ -45,7 +45,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
       const data = await response.json();
 
       if (response.ok || data.success) {
-        toast.success("Payout processed.");
+        toast.success("Payout queued. The vendor is paid once RazorpayX confirms.");
         onChanged?.();
       } else {
         toast.error("Failed to settle payout: " + (data.message || "Unknown error"));
@@ -143,7 +143,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
         <Table>
           <TableHeader>
             <TableRow className="border-white/5 hover:bg-transparent">
-              {["Booking ID", "Vendor", "Service", "City", "Vendor Owes", "Time Left", "Action"].map(h => (
+              {["Booking ID", "Vendor", "Service", "City", "Owed to vendor", "Time Left", "Action"].map(h => (
                 <TableHead key={h} className="text-[10px] font-bold text-brand-gray-600 uppercase tracking-wider">{h}</TableHead>
               ))}
             </TableRow>
@@ -178,6 +178,11 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
                         >
                           ⚠ NO PAYOUT ACCOUNT
                         </span>
+                      )}
+                      {/* Failed payouts are listed since 2026-11-03 so they can be
+                          retried; before, they were only a number in the KPIs. */}
+                      {p.payoutStatus === 'failed' && (
+                        <span className="ml-2 text-[10px] font-bold text-[#ff3d3d]">LAST PAYOUT FAILED</span>
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-brand-gray-800">{p.booking}</TableCell>
@@ -215,7 +220,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
                           border: `1px solid ${cfg.color}30`,
                         }}
                       >
-                        {loadingPayout === p.id ? "Processing..." : (p.payoutReady ? "Pay Now" : "Blocked")}
+                        {loadingPayout === p.id ? "Processing..." : (!p.payoutReady ? "Blocked" : p.payoutStatus === 'failed' ? "Retry" : "Pay Now")}
                       </Button>
                     </TableCell>
                   </TableRow>

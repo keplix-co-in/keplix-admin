@@ -5,6 +5,7 @@ import FinanceKpis from "./finance/FinanceKpis.jsx";
 import RefundPanel from "./finance/RefundPanel.jsx";
 import CashFlowPipeline from "./finance/CashFlowPipeline.jsx";
 import PayoutQueue from "./finance/PayoutQueue.jsx";
+import RefundsList from "./finance/RefundsList.jsx";
 
 /**
  * Was 500+ lines covering KPIs, the refund flow, the illustrative cash-flow
@@ -19,6 +20,8 @@ export default function FinanceView() {
   const [loading, setLoading] = useState(true);
   const [kpiError, setKpiError] = useState('');
   const [payoutError, setPayoutError] = useState('');
+  // Bumped after a refund from the top panel so the Refunds list reloads.
+  const [refundsReload, setRefundsReload] = useState(0);
 
   useEffect(() => {
     fetchPayouts();
@@ -66,6 +69,8 @@ export default function FinanceView() {
           // The backend now reports this, so the operator can see it before
           // clicking rather than queueing a job that is certain to fail.
           payoutReady: item.payoutReady !== false,
+          // 'pending' or 'failed'; a failed one shows a Retry button.
+          payoutStatus: item.vendorPayoutStatus || 'pending',
           payoutBlockedReason: item.payoutBlockedReason || null
         }));
         setPayoutQueue(formatted);
@@ -87,6 +92,15 @@ export default function FinanceView() {
 
       <RefundPanel
         onRefundSuccess={() => {
+          fetchKpis();
+          fetchPayouts();
+          setRefundsReload((n) => n + 1);
+        }}
+      />
+
+      <RefundsList
+        reloadKey={refundsReload}
+        onRefunded={() => {
           fetchKpis();
           fetchPayouts();
         }}
