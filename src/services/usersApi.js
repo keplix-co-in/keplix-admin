@@ -49,7 +49,8 @@ export const getUsers = async (type = 'all', page = 1, limit = 10) => {
     });
 
     const url = `${API_URL}/admin/users?${queryParams}`;
-    console.log(`📡 API Request: ${url}`);
+    // Security review 2026-10-28 O-003: the full request URL (incl. query
+    // string) used to be console.log'd here; removed.
 
     // authFetch renews an expired token and retries once itself; it only
     // throws SESSION_EXPIRED if that retry also fails, so a plain 401

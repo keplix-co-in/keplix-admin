@@ -14,13 +14,15 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      console.log('🔐 Attempting login with:', email);
+      // Security review 2026-10-28 O-003: the login email and a success
+      // trace used to be console.log'd here; removed so admin identities
+      // don't land in the browser console. Production builds also drop all
+      // console.* calls (vite.config.js).
       const response = await adminLogin(email, password);
-      
-      console.log('✅ Login successful, calling onLogin callback');
       onLogin(response.user);
     } catch (err) {
-      console.error('❌ Login failed:', err);
+      // Message only — not the error object (O-003).
+      console.error('Login failed:', err?.message);
       setError(err.message || 'Login failed. Please check your credentials.');
     } finally {
       setLoading(false);

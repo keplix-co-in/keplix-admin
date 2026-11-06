@@ -72,8 +72,10 @@ export default function KeplixAdmin() {
     setIsAuthenticated(false);
   };
 
-  const handleLogin = (userData) => {
-    console.log('User logged in:', userData);
+  // Security review 2026-10-28 O-004: this used to console.log the full
+  // admin user object on every login; removed. The callback argument is
+  // unused now, so it is no longer taken.
+  const handleLogin = () => {
     setIsAuthenticated(true);
     setCheckingSession(false);
   };

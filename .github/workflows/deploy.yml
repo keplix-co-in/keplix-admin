@@ -4,6 +4,18 @@ on:
   push:
     branches: [ main ] # Trigger deployment on push to the main branch
 
+# Security review 2026-10-28 A-005: least-privilege GITHUB_TOKEN. Nothing in
+# this workflow writes to the repo, so the default (broader) token scope is
+# not needed.
+permissions:
+  contents: read
+
+# Security review 2026-10-28 A-005: every action below is pinned to a full
+# commit SHA (the tag it was resolved from is in the trailing comment), so a
+# moved or compromised tag can't swap in different code while VERCEL_TOKEN is
+# in scope. To update: `git ls-remote --tags https://github.com/<owner>/<repo>`
+# and replace both the SHA and the comment.
+
 jobs:
   # Gate added 2026-09-14 (audit F31): this workflow deployed straight to
   # production on every push to main with no test or lint step at all. The
@@ -13,9 +25,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        with:
+          persist-credentials: false
       - name: Use Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: '22'
           cache: 'npm'
@@ -40,13 +54,30 @@ jobs:
       # keplix-website/.github/workflows/deploy.yml's own comment on this
       # exact pattern, which this workflow did not follow (audit F71).
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      # A-005: exact CLI version instead of vercel@latest, so a malicious or
+      # broken new release can't run with the production token. Bump
+      # deliberately (check `npm view vercel time`).
+      VERCEL_CLI_VERSION: '65.11.0'
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      with:
+        persist-credentials: false
+
+    - name: Use Node.js
+      uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+      with:
+        node-version: '22'
+        cache: 'npm'
+
+    # A-005: lockfile-exact install (the project's own deps; `vercel build`
+    # also uses `npm ci` via installCommand in vercel.json).
+    - name: Install dependencies
+      run: npm ci
 
     - name: Install Vercel CLI
-      run: npm install --global vercel@latest
+      run: npm install --global "vercel@${VERCEL_CLI_VERSION}"
 
     - name: Pull Vercel Environment
       run: vercel pull --yes --environment=production --token="$VERCEL_TOKEN"

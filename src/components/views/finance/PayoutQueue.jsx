@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { API_URL } from "../../../services/apiConfig.js";
 import { authFetch } from "../../../services/authApi.js";
 import Badge from "../../ui/Badge.jsx";
@@ -35,7 +35,23 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
   const [initiateConfirm, setInitiateConfirm] = useState(null);
   const [initiateBusy, setInitiateBusy] = useState(false);
 
+  // Security review 2026-10-28 A-004: a single row's "Pay Now" used to POST
+  // the settle on one click, with no confirm step (only the bulk path had
+  // one), so a stray/double click or a clickjacking assist moved money
+  // immediately. It now opens the same ConfirmDialog as "Initiate All",
+  // naming the vendor and amount; nothing is sent until the admin confirms.
+  // The backend settle is also idempotent and super_admin-only.
+  const [payConfirm, setPayConfirm] = useState(null);
+  // Synchronous in-flight flag for the guard below. Checking the
+  // `loadingPayout` state alone reads the value from the render the click
+  // handler was created in, so two confirms dispatched before React re-renders
+  // could both see null and both POST. A ref is updated immediately.
+  const payInFlight = useRef(false);
+
   const handlePayNow = async (payout) => {
+    // Ignore a second confirm while this payout is already being sent (A-004).
+    if (payInFlight.current) return;
+    payInFlight.current = true;
     setLoadingPayout(payout.id);
     try {
       const response = await authFetch(`${API_URL}/admin/finance/payouts/${payout.paymentId}/settle`, {
@@ -56,7 +72,9 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
       // SESSION_EXPIRED; surface it instead of a generic network message.
       toast.error(error.message || "Failed due to a network or server error.");
     } finally {
+      payInFlight.current = false;
       setLoadingPayout(null);
+      setPayConfirm(null);
     }
   };
 
@@ -126,6 +144,18 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
           loading={initiateBusy}
           onConfirm={runInitiateAll}
           onCancel={() => setInitiateConfirm(null)}
+        />
+      )}
+
+      {payConfirm && (
+        <ConfirmDialog
+          title={payConfirm.payoutStatus === 'failed' ? "Retry payout" : "Confirm payout"}
+          message={`Pay ${formatINR(payConfirm.amount)} to ${payConfirm.vendor || 'this vendor'} for booking ${payConfirm.id}?\n\nThis sends real money through RazorpayX and cannot be undone from here.`}
+          confirmLabel={`Pay ${formatINR(payConfirm.amount)}`}
+          danger
+          loading={loadingPayout === payConfirm.id}
+          onConfirm={() => handlePayNow(payConfirm)}
+          onCancel={() => setPayConfirm(null)}
         />
       )}
 
@@ -210,7 +240,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={() => handlePayNow(p)}
+                        onClick={() => setPayConfirm(p)}
                         loading={loadingPayout === p.id}
                         disabled={!p.payoutReady}
                         title={!p.payoutReady ? (p.payoutBlockedReason || 'Vendor cannot be paid out') : undefined}

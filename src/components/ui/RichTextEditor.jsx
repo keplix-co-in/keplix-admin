@@ -14,12 +14,28 @@ const btn = (active) =>
 /**
  * WYSIWYG for blog bodies. Emits HTML, which the backend re-sanitizes with an
  * allowlist before storing — so nothing here is trusted on the way in.
+ *
+ * Security review 2026-10-28 A-008: the admin never renders blog HTML with
+ * dangerouslySetInnerHTML; stored HTML only comes back in through Tiptap,
+ * whose ProseMirror schema drops anything it doesn't model (scripts, event
+ * handler attributes, iframes). The backend sanitizes on write
+ * (keplix-backend util/sanitizeHtml.js) and the website renders with
+ * DOMPurify, so no extra sanitizer is added here.
  */
 export default function RichTextEditor({ value, onChange }) {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Link.configure({ openOnClick: false, autolink: true }),
+      // Security review 2026-10-28 (target=_blank sweep, alongside A-008):
+      // links open in a new tab (addLink below), so rel is pinned explicitly
+      // rather than relying on Tiptap's default — noopener/noreferrer stop the
+      // opened page from reaching window.opener. Tiptap's own URI check
+      // already refuses javascript: hrefs.
+      Link.configure({
+        openOnClick: false,
+        autolink: true,
+        HTMLAttributes: { rel: 'noopener noreferrer nofollow' },
+      }),
       Image,
     ],
     content: value || '',

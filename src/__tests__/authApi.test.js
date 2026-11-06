@@ -52,9 +52,21 @@ describe('isAdminAuthenticated', () => {
     expect(auth.isAdminAuthenticated()).toBe(false);
   });
 
-  it('treats a well-formed token with no exp claim as valid', () => {
+  // A-007 (security review 2026-10-28): a token without exp must not be
+  // accepted as a never-expiring session.
+  it('rejects a well-formed token with no exp claim', () => {
     localStorage.setItem('adminToken', makeJwt({ sub: 'admin-1' }));
-    expect(auth.isAdminAuthenticated()).toBe(true);
+    expect(auth.isAdminAuthenticated()).toBe(false);
+  });
+
+  it('rejects a token whose exp is not a number', () => {
+    localStorage.setItem('adminToken', makeJwt({ sub: 'admin-1', exp: '9999999999' }));
+    expect(auth.isAdminAuthenticated()).toBe(false);
+  });
+
+  it('rejects a token whose payload decodes to JSON null', () => {
+    localStorage.setItem('adminToken', `x.${btoa('null')}.y`);
+    expect(auth.isAdminAuthenticated()).toBe(false);
   });
 
   it('handles base64url payloads containing - and _ characters', () => {

@@ -28,16 +28,13 @@ export default function SecurityTab() {
         </div>
       </div>
 
-      <div className="h-px w-full bg-white/5 my-2"></div>
-
-      <div>
-        <h3 className="text-lg font-syne font-bold text-white mb-1">Two-Factor Authentication (2FA)</h3>
-        <p className="text-xs text-white/40 mb-5">Add an extra layer of security to your account.</p>
-
-        <button className="py-2.5 px-5 rounded-lg bg-transparent border border-brand-red text-brand-red hover:bg-brand-red/10 transition-all font-semibold text-sm">
-          Enable 2FA
-        </button>
-      </div>
+      {/*
+        Security review 2026-10-28 A-003 (owner decision 2026-11-05): the
+        "Two-Factor Authentication (2FA)" section and its "Enable 2FA" button
+        were removed. The button had no handler and the backend's
+        /admin/auth/login has no admin TOTP/MFA, so it falsely suggested 2FA
+        was available. Re-add it only together with real backend MFA.
+      */}
     </div>
   );
 }

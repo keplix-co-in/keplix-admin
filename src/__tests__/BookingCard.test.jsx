@@ -90,7 +90,10 @@ describe('BookingCard', () => {
   });
 
   it('resolves a dispute with a confirmed reason, then offers a pre-filled refund', async () => {
-    const user = userEvent.setup();
+    // delay: null — this test types ~33 characters; with the default delay
+    // each keystroke awaits a setTimeout, which under load pushed it past the
+    // 5 s test timeout (flaky). Same events, just no timer hop per key.
+    const user = userEvent.setup({ delay: null });
     const onChanged = vi.fn();
     resolveDispute.mockResolvedValue({ booking: { id: 42, status: 'cancelled' } });
     renderCard({ ...base, status: 'disputed', payment: paid }, { onChanged });

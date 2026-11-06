@@ -12,7 +12,7 @@
  * (BookingsView via useApiResource, GlobalSearch via Promise.allSettled)
  * both handle a throw, so it now has its own "throws" block below.
  */
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterEach, vi } from 'vitest';
 
 const ok = (body) => ({ ok: true, status: 200, json: async () => body, text: async () => '' });
 const bad = (status, body = {}) => ({
@@ -23,6 +23,24 @@ const bad = (status, body = {}) => ({
 });
 
 let vendorsApi, usersApi, blogsApi, healthComponentsApi, offersApi, walkInJobsApi, bookingsApi;
+
+// Flake fix 2026-11-05: the FIRST beforeEach below paid the cold transform of
+// all seven service modules (≈3 s on an idle machine), and under load it hit
+// the 10 s hookTimeout, failing the first getVendors test. Warm the transform
+// cache once here, with its own generous timeout; vi.resetModules() in
+// beforeEach still re-evaluates fresh module instances per test, it just no
+// longer has to re-transform them.
+beforeAll(async () => {
+  await Promise.all([
+    import('../services/vendorsApi.js'),
+    import('../services/usersApi.js'),
+    import('../services/blogsApi.js'),
+    import('../services/healthComponentsApi.js'),
+    import('../services/offersApi.js'),
+    import('../services/walkInJobsApi.js'),
+    import('../services/bookingsApi.js'),
+  ]);
+}, 60_000);
 
 beforeEach(async () => {
   localStorage.clear();

@@ -43,6 +43,15 @@ export const adminLogin = async (email, password) => {
     // login appeared to succeed (App.jsx sets its state from the callback,
     // not from the token) while every subsequent request went out as
     // "Bearer null" and 401'd, leaving every screen silently empty.
+    //
+    // Security review 2026-10-28 O-001 — ACCEPTED RISK (owner decision
+    // 2026-11-05): the access and refresh tokens stay in localStorage, which
+    // any script running on this origin can read. Do not "fix" this by moving
+    // storage without an owner decision (it needs a backend httpOnly-cookie
+    // flow and a Vercel /api proxy). The mitigation is the strict
+    // Content-Security-Policy in vercel.json (finding O-002: script-src
+    // 'self', tight connect-src, frame-ancestors 'none'), which blocks
+    // injected/third-party scripts from running and from exfiltrating tokens.
     if (data.accessToken) {
       localStorage.setItem('adminToken', data.accessToken);
     }
@@ -242,7 +251,13 @@ export const isAdminAuthenticated = () => {
     const payloadBase64 = token.split('.')[1];
     if (!payloadBase64) return false;
     const payload = JSON.parse(atob(payloadBase64.replace(/-/g, '+').replace(/_/g, '/')));
-    if (!payload.exp) return true; // no expiry claim — treat presence as valid
+    // Security review 2026-10-28 A-007: a token with no (or a non-numeric)
+    // `exp` claim used to be accepted as valid forever. The backend always
+    // signs admin access tokens with expiresIn '15m'
+    // (keplix-backend controllers/Admin/authController.js), so a token without
+    // `exp` is not one we issued — treat it as expired/invalid. Undecodable
+    // tokens already fall through to the catch below and are rejected too.
+    if (typeof payload?.exp !== 'number' || !Number.isFinite(payload.exp)) return false;
     return payload.exp * 1000 > Date.now();
   } catch {
     return false;

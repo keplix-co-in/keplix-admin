@@ -121,7 +121,11 @@ export default function RefundsList({ reloadKey = 0, onRefunded }) {
                     )}
                   </TableCell>
                   <TableCell>
-                    {CAN_REFUND.has(it.group) && (
+                    {/* A failed try that a later refund replaced needs no button:
+                        pressing it could pay the customer twice. */}
+                    {it.superseded ? (
+                      <span className="text-[10px] text-brand-gray-600">Replaced by a later refund</span>
+                    ) : CAN_REFUND.has(it.group) && (
                       <Button size="sm" variant="secondary" onClick={() => setRefunding(it)}>
                         Refund
                       </Button>

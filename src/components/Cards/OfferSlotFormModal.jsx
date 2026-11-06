@@ -178,6 +178,10 @@ export default function OfferSlotFormModal({ placement, slot, onClose, onSaved }
               Paste an image URL. Leave blank for the plain dark background. The text sits on
               top, so choose something darker — it&apos;s dimmed automatically to keep the copy
               readable.
+              {/* Security review 2026-10-28 O-002: the admin CSP (vercel.json)
+                  only allows images from Cloudinary, so a preview of a
+                  banner hosted elsewhere is blocked here (the URL still saves). */}
+              {' '}The preview only shows Cloudinary-hosted images.
             </p>
             {form.image_url ? (
               <div className="mt-3 rounded-xl overflow-hidden border border-white/10 bg-black/40">

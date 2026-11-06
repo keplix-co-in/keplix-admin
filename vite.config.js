@@ -21,6 +21,38 @@ export default defineConfig({
       '@': path.resolve(path.dirname(fileURLToPath(import.meta.url)), './src'),
     },
   },
+  // Security review 2026-10-28 O-003 / O-004: strip debug logging from
+  // production bundles so admin emails, request URLs or user objects can't
+  // leak into the browser console even if a stray console.log is reintroduced.
+  // Vite 8 bundles/minifies with Rolldown + Oxc (esbuild's `drop` option is
+  // not honoured), so this is done in two Rolldown settings:
+  //  - treeshake.manualPureFunctions marks console.log/info/debug/warn/trace/
+  //    dir/table as side-effect free, so the calls are removed from the bundle;
+  //  - the Oxc minifier's dropDebugger removes `debugger;` statements.
+  // console.error is deliberately KEPT for production diagnostics; call sites
+  // must log messages/status codes, never tokens or user objects.
+  // Only affects `vite build`; dev server and vitest are unchanged.
+  build: {
+    rolldownOptions: {
+      treeshake: {
+        manualPureFunctions: [
+          'console.log',
+          'console.info',
+          'console.debug',
+          'console.warn',
+          'console.trace',
+          'console.dir',
+          'console.table',
+        ],
+      },
+      output: {
+        minify: {
+          compress: { dropDebugger: true },
+          mangle: true,
+        },
+      },
+    },
+  },
   test: {
     environment: 'jsdom',
     globals: true,
