@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Button from "../../ui/Button.jsx";
 import RefundModal from "./RefundModal.jsx";
+import { isSuperAdmin } from "../../../services/authApi.js";
 
 /**
  * Refund button + modal. Split out of FinanceView.jsx -- see that file's own
@@ -27,7 +28,8 @@ export default function RefundPanel({ onRefundSuccess }) {
             Full or partial, by Payment ID. Repeat submissions of the same refund are de-duplicated automatically.
           </div>
         </div>
-        <Button size="sm" onClick={() => setRefundOpen(true)}>
+        {/* M-3: refunds are super_admin-only on the backend. */}
+        <Button size="sm" onClick={() => setRefundOpen(true)} disabled={!isSuperAdmin()} title={!isSuperAdmin() ? "Super admin only" : undefined}>
           Issue Refund
         </Button>
       </div>

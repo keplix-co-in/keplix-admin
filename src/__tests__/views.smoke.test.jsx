@@ -18,11 +18,9 @@ vi.mock('../services/vendorsApi', () => ({
 vi.mock('../services/usersApi', () => ({
   getUsers: vi.fn(),
   deleteUser: vi.fn(),
-  getUserMetrics: vi.fn(),
 }));
 vi.mock('../services/bookingsApi', () => ({
   getBookings: vi.fn(),
-  getBookingMetrics: vi.fn(),
   forceCompleteBooking: vi.fn(),
   resolveDispute: vi.fn(),
 }));
@@ -40,10 +38,7 @@ vi.mock('../services/healthComponentsApi', () => ({
 vi.mock('../services/offersApi', () => ({
   getOfferSlots: vi.fn(),
   saveOfferSlotByKey: vi.fn(),
-  createOfferSlot: vi.fn(),
-  updateOfferSlot: vi.fn(),
   setOfferSlotTargets: vi.fn(),
-  deleteOfferSlot: vi.fn(),
 }));
 vi.mock('../services/walkInJobsApi', () => ({
   getWalkInJobs: vi.fn(),

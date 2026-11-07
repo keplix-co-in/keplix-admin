@@ -7,26 +7,6 @@ import { API_URL } from './apiConfig.js';
 import { authFetch } from './authApi.js';
 
 /**
- * Get booking metrics (counts by status)
- */
-export const getBookingMetrics = async () => {
-  try {
-    const response = await authFetch(`${API_URL}/admin/bookings/counts`, {
-      method: 'GET',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch booking metrics: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching booking metrics:', error);
-    throw error;
-  }
-};
-
-/**
  * Get bookings with filters and pagination.
  *
  * THROWS on failure (network, non-2xx, no session) rather than resolving to
@@ -127,7 +107,6 @@ export const resolveDispute = async (bookingId, reason) => {
 };
 
 export default {
-  getBookingMetrics,
   getBookings,
   forceCompleteBooking,
   resolveDispute

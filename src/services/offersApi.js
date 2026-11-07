@@ -39,24 +39,6 @@ export const getOfferSlots = async () => {
   }
 };
 
-export const createOfferSlot = async (slot) => {
-  const response = await authFetch(`${API_URL}/admin/offer-slots`, {
-    method: 'POST',
-    body: JSON.stringify(slot),
-  });
-  if (!response.ok) await failWith(response, 'Failed to create offer slot');
-  return response.json();
-};
-
-export const updateOfferSlot = async (id, updates) => {
-  const response = await authFetch(`${API_URL}/admin/offer-slots/${id}`, {
-    method: 'PATCH',
-    body: JSON.stringify(updates),
-  });
-  if (!response.ok) await failWith(response, 'Failed to update offer slot');
-  return response.json();
-};
-
 /**
  * Save a placement by its key, creating the row if it doesn't exist yet.
  * Used by the Offers page, which lists placements defined in app code rather
@@ -81,13 +63,5 @@ export const setOfferSlotTargets = async (id, vendorIds) => {
     body: JSON.stringify({ vendor_ids: vendorIds }),
   });
   if (!response.ok) await failWith(response, 'Failed to update targeting');
-  return response.json();
-};
-
-export const deleteOfferSlot = async (id) => {
-  const response = await authFetch(`${API_URL}/admin/offer-slots/${id}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) await failWith(response, 'Failed to delete offer slot');
   return response.json();
 };

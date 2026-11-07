@@ -26,6 +26,8 @@ const queue = [
 
 beforeEach(() => {
   localStorage.setItem('adminToken', 'tok');
+  // M-3: these actions are only shown to super_admin.
+  localStorage.setItem('adminUser', JSON.stringify({ id: 1, role: 'super_admin' }));
   vi.stubGlobal('fetch', vi.fn().mockResolvedValue(json({ success: true })));
 });
 

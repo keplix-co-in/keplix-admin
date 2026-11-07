@@ -3,6 +3,7 @@ import Button from '../ui/Button.jsx';
 import { useToast } from '../ui/toastContext.js';
 import { forceCompleteBooking } from '../../services/bookingsApi';
 import { formatINR } from '../../utils/format.js';
+import { isSuperAdmin } from '../../services/authApi.js';
 import RefundModal from '../views/finance/RefundModal.jsx';
 import ResolveDisputeModal from './ResolveDisputeModal.jsx';
 
@@ -41,17 +42,21 @@ export default function BookingActions({ booking, status, onStatusChange, onChan
   // booking after the list refreshes.
   const [refundedHere, setRefundedHere] = useState(false);
 
+  // M-3: force-complete, dispute resolve and refund are all
+  // authorizeSuperAdmin on the backend. Hidden for other roles (UI only —
+  // the backend still enforces).
+  const superAdmin = isSuperAdmin();
   const payment = booking.payment;
   const paymentRefunded = refundedHere || payment?.status === 'refunded';
   // The refund endpoint only accepts payments in 'success' (see
   // keplix-backend services/refundService.js). Older API responses have no
   // `payment` object, and then the action stays hidden rather than guessing.
   const canRefund =
-    payment?.id != null && payment.status === 'success' && status !== 'refunded' && !refundedHere;
+    superAdmin && payment?.id != null && payment.status === 'success' && status !== 'refunded' && !refundedHere;
   // A booking whose money went back to the customer must not be pushed
   // towards a payout either.
-  const canForce = !FORCE_COMPLETE_HIDDEN.has(status) && !paymentRefunded;
-  const canResolve = status === 'disputed';
+  const canForce = superAdmin && !FORCE_COMPLETE_HIDDEN.has(status) && !paymentRefunded;
+  const canResolve = superAdmin && status === 'disputed';
 
   const handleForceComplete = async () => {
     // window.prompt/confirm match this app's existing convention (see

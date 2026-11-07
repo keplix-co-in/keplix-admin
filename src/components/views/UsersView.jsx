@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { userStatusConfig } from "../../data/config";
 import { getUsers, deleteUser } from "../../services/usersApi";
+import { isSuperAdmin } from "../../services/authApi";
 import { Icon } from "../ui/Icon";
 import UserCard from "../Cards/UserCard";
 import ConfirmDialog from "../ui/ConfirmDialog";
@@ -191,6 +192,8 @@ export default function UsersView() {
                     </TableCell>
 
                     <TableCell>
+                      {/* M-3: DELETE /admin/users/:id is super_admin-only. */}
+                      {isSuperAdmin() && (
                       <button
                         type="button"
                         onClick={() => setPendingDeleteUser(u)}
@@ -199,6 +202,7 @@ export default function UsersView() {
                       >
                         <Icon name="delete" size={13} color="#ff3d3d" />
                       </button>
+                      )}
                     </TableCell>
                   </TableRow>
                 );

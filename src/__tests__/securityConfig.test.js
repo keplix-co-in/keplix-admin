@@ -51,6 +51,8 @@ describe('vercel.json security headers (O-002)', () => {
     expect(csp['connect-src']).toEqual([
       "'self'",
       'https://keplix-backend-529844482719.asia-south1.run.app',
+      // Supabase Auth (2026-11 migration): sign-in and token refresh.
+      'https://ruvtpvypjgqzfqfdjguz.supabase.co',
     ]);
   });
 

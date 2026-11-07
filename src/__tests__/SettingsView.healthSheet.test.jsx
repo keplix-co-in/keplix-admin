@@ -30,6 +30,8 @@ const openHealthTab = async (user) => {
 const toggle = () => screen.getByRole('checkbox');
 
 beforeEach(() => {
+  // M-3: platform settings are only rendered for super_admin.
+  localStorage.setItem('adminUser', JSON.stringify({ id: 1, role: 'super_admin' }));
   vi.clearAllMocks();
   getPlatformSettings.mockResolvedValue({
     isHealthSheetRequired: false,

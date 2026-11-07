@@ -34,6 +34,4 @@ const offerPlacements = [
   },
 ];
 
-export const getPlacement = (key) => offerPlacements.find((p) => p.key === key);
-
 export default offerPlacements;

@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import { API_URL } from "../../../services/apiConfig.js";
-import { authFetch } from "../../../services/authApi.js";
+import { authFetch, isSuperAdmin } from "../../../services/authApi.js";
 import Badge from "../../ui/Badge.jsx";
 import Button from "../../ui/Button.jsx";
 import ConfirmDialog from "../../ui/ConfirmDialog.jsx";
@@ -26,6 +26,7 @@ const urgencyConfig = {
  * functions directly.
  */
 export default function PayoutQueue({ queue, loading, error, onRetry, onChanged }) {
+  const superAdmin = isSuperAdmin();
   const toast = useToast();
   const [loadingPayout, setLoadingPayout] = useState(null);
 
@@ -162,7 +163,9 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
       <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
         <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
           <span className="font-syne text-base font-bold">⏳ Payout Queue</span>
-          <Button size="sm" loading={initiateBusy} onClick={handleInitiateAll}>
+          {/* M-3: settle is authorizeSuperAdmin on the backend; disable for
+              other roles so they don't hit a 403 per row. */}
+          <Button size="sm" loading={initiateBusy} onClick={handleInitiateAll} disabled={!superAdmin} title={!superAdmin ? "Super admin only" : undefined}>
             Initiate All Payouts
           </Button>
         </div>
@@ -242,8 +245,8 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
                         size="sm"
                         onClick={() => setPayConfirm(p)}
                         loading={loadingPayout === p.id}
-                        disabled={!p.payoutReady}
-                        title={!p.payoutReady ? (p.payoutBlockedReason || 'Vendor cannot be paid out') : undefined}
+                        disabled={!p.payoutReady || !superAdmin}
+                        title={!superAdmin ? "Super admin only" : !p.payoutReady ? (p.payoutBlockedReason || 'Vendor cannot be paid out') : undefined}
                         style={{
                           background: cfg.bg,
                           color: cfg.color,

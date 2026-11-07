@@ -5,6 +5,7 @@ import SecurityTab from './settings/SecurityTab.jsx';
 import NotificationsTab from './settings/NotificationsTab.jsx';
 import CommissionSettings from './settings/CommissionSettings.jsx';
 import HealthSheetSettings from './settings/HealthSheetSettings.jsx';
+import { isSuperAdmin } from '../../services/authApi';
 
 /**
  * Was 500+ lines covering five unrelated tabs (three unwired mockups plus two
@@ -12,6 +13,14 @@ import HealthSheetSettings from './settings/HealthSheetSettings.jsx';
  * ./settings/*.jsx, each owning its own state where it has any; this
  * component only owns which tab is selected.
  */
+function SuperAdminOnly() {
+  return (
+    <div className="p-6 text-sm text-brand-gray-300" role="note">
+      Only a super admin can view or change these settings.
+    </div>
+  );
+}
+
 export default function SettingsView() {
   const [activeTab, setActiveTab] = useState('general');
 
@@ -31,8 +40,10 @@ export default function SettingsView() {
     general: <GeneralTab />,
     security: <SecurityTab />,
     notifications: <NotificationsTab />,
-    commission: <CommissionSettings />,
-    health: <HealthSheetSettings />,
+    // M-3: /admin/platform-settings (GET and PATCH) is super_admin-only, so
+    // other roles get a notice instead of a form that can only 403.
+    commission: isSuperAdmin() ? <CommissionSettings /> : <SuperAdminOnly />,
+    health: isSuperAdmin() ? <HealthSheetSettings /> : <SuperAdminOnly />,
   };
 
   return (

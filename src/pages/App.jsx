@@ -15,14 +15,14 @@ import OffersView from '../components/views/OffersView';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import Login from './Login';
-import { isAdminAuthenticated, adminLogout, refreshAdminToken, getAdminToken } from '../services/authApi';
+import { isAdminAuthenticated, adminLogout, refreshAdminToken, hasStoredSession, SESSION_ENDED_EVENT } from '../services/authApi';
 
 export default function KeplixAdmin() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => isAdminAuthenticated());
   // Distinguishes "known logged out" from "still checking" so a reload with an
   // expired access token doesn't flash the login screen before the silent
   // refresh below has had a chance to run.
-  const [checkingSession, setCheckingSession] = useState(() => !isAdminAuthenticated() && !!getAdminToken());
+  const [checkingSession, setCheckingSession] = useState(() => !isAdminAuthenticated() && hasStoredSession());
   // Was `useState('dashboard')`, driving conditional `activeNav === 'x' &&`
   // renders instead of real routes -- nothing was deep-linkable, bookmarkable,
   // or reachable via the browser back/forward buttons, and a page reload
@@ -52,8 +52,8 @@ export default function KeplixAdmin() {
   // on mount, when a token is present but already expired.
   useEffect(() => {
     if (isAuthenticated) return;
-    const staleToken = getAdminToken();
-    if (!staleToken) return;
+    // Also covers a surviving Supabase session whose 'adminToken' mirror is gone.
+    if (!hasStoredSession()) return;
 
     let cancelled = false;
     refreshAdminToken().then((renewed) => {
@@ -64,10 +64,22 @@ export default function KeplixAdmin() {
     return () => { cancelled = true; };
   }, [isAuthenticated]);
 
+  // SESSION_EXPIRED / Supabase SIGNED_OUT: authApi has already cleared local
+  // state; show the Login screen instead of a dashboard whose calls all fail.
+  useEffect(() => {
+    const onEnded = () => {
+      setIsAuthenticated(false);
+      setCheckingSession(false);
+    };
+    window.addEventListener(SESSION_ENDED_EVENT, onEnded);
+    return () => window.removeEventListener(SESSION_ENDED_EVENT, onEnded);
+  }, []);
+
   const handleLogout = async () => {
-    // Awaited so the server-side refresh-token revocation is actually issued
-    // before the UI tears down; adminLogout clears the local session in its own
-    // `finally`, so a failed request still logs the admin out locally.
+    // Awaited so the Supabase global sign-out (server-side revocation of this
+    // admin's refresh tokens, see adminLogout) is issued before the UI tears
+    // down; adminLogout clears local state in its own `finally`, so a failed
+    // request still logs the admin out locally.
     await adminLogout();
     setIsAuthenticated(false);
   };

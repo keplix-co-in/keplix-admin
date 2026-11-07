@@ -7,26 +7,6 @@ import { API_URL } from './apiConfig.js';
 import { authFetch } from './authApi.js';
 
 /**
- * Get user metrics (counts by status)
- */
-export const getUserMetrics = async () => {
-  try {
-    const response = await authFetch(`${API_URL}/admin/users/metrics`, {
-      method: 'GET',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch user metrics: ${response.status}`);
-    }
-
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching user metrics:', error);
-    throw error;
-  }
-};
-
-/**
  * Get users with filters and pagination
  * @param {string} type - Filter type: all, active, inactive, uninstalled
  * @param {number} page - Page number (1-indexed)
@@ -94,7 +74,6 @@ export const deleteUser = async (id) => {
 };
 
 export default {
-  getUserMetrics,
   getUsers,
   deleteUser
 };

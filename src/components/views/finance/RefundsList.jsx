@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { API_URL } from "../../../services/apiConfig.js";
-import { authFetch } from "../../../services/authApi.js";
+import { authFetch, isSuperAdmin } from "../../../services/authApi.js";
 import Badge from "../../ui/Badge.jsx";
 import Button from "../../ui/Button.jsx";
 import EmptyState from "../../ui/EmptyState.jsx";
@@ -125,7 +125,8 @@ export default function RefundsList({ reloadKey = 0, onRefunded }) {
                         pressing it could pay the customer twice. */}
                     {it.superseded ? (
                       <span className="text-[10px] text-brand-gray-600">Replaced by a later refund</span>
-                    ) : CAN_REFUND.has(it.group) && (
+                    ) : CAN_REFUND.has(it.group) && isSuperAdmin() && (
+                      // M-3: refund is super_admin-only on the backend.
                       <Button size="sm" variant="secondary" onClick={() => setRefunding(it)}>
                         Refund
                       </Button>
