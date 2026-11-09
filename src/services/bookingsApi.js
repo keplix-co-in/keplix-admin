@@ -106,8 +106,32 @@ export const resolveDispute = async (bookingId, reason) => {
   return await response.json();
 };
 
+/**
+ * DEV-26: cancel a booking stuck in `in_progress` as a vendor no-show. The
+ * backend cancels it, voids a still-pending vendor payout (a paid/settled one
+ * is left alone and flagged in the server logs) and issues a FULL refund
+ * through its existing refund path. super_admin only.
+ * @param {string|number} bookingId
+ * @param {string} reason - context for the audit note
+ * @returns {Promise<{booking: object, payout: string, refund: {code: string, refunded: boolean, amount: number|null}}>}
+ */
+export const cancelNoShowBooking = async (bookingId, reason) => {
+  const response = await authFetch(`${API_URL}/admin/bookings/${bookingId}/cancel-no-show`, {
+    method: 'POST',
+    body: JSON.stringify({ reason })
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `Failed to cancel booking as no-show: ${response.status}`);
+  }
+
+  return await response.json();
+};
+
 export default {
   getBookings,
   forceCompleteBooking,
-  resolveDispute
+  resolveDispute,
+  cancelNoShowBooking
 };

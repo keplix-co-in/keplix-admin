@@ -9,9 +9,10 @@ import userEvent from '@testing-library/user-event';
 vi.mock('../services/bookingsApi', () => ({
   forceCompleteBooking: vi.fn(),
   resolveDispute: vi.fn(),
+  cancelNoShowBooking: vi.fn(),
 }));
 
-import { resolveDispute } from '../services/bookingsApi';
+import { resolveDispute, cancelNoShowBooking } from '../services/bookingsApi';
 import BookingCard from '../components/Cards/BookingCard.jsx';
 
 const base = {
@@ -129,5 +130,50 @@ describe('BookingCard', () => {
     expect(String(url)).toContain('/admin/finance/payments/312/refund');
     expect(JSON.parse(init.body)).toMatchObject({ idempotencyKey: expect.stringContaining('admin-refund-312') });
     expect(within(refundDialog).getByText('Refund processed')).toBeInTheDocument();
+  });
+
+  // DEV-26
+  const noShowBtn = () => screen.queryByRole('button', { name: /cancel \(no-show\)/i });
+
+  it.each(['confirmed', 'disputed', 'service_completed', 'cancelled'])('hides Cancel (no-show) for %s', (status) => {
+    renderCard({ ...base, status, payment: paid });
+    expect(noShowBtn()).not.toBeInTheDocument();
+  });
+
+  it('hides Cancel (no-show) from a plain admin', () => {
+    localStorage.setItem('adminUser', JSON.stringify({ id: 2, role: 'admin' }));
+    renderCard({ ...base, status: 'in_progress', payment: paid });
+    expect(noShowBtn()).not.toBeInTheDocument();
+  });
+
+  it('cancels an in_progress booking as no-show after a prompted reason, then refreshes', async () => {
+    const user = userEvent.setup({ delay: null });
+    const onChanged = vi.fn();
+    const onClose = vi.fn();
+    vi.spyOn(window, 'prompt').mockReturnValue('  vendor never arrived ');
+    cancelNoShowBooking.mockResolvedValue({ booking: { id: 42, status: 'cancelled' }, payout: 'not_applicable', refund: { code: 'REFUND_ISSUED', refunded: true } });
+    renderCard({ ...base, status: 'in_progress', payment: paid }, { onChanged, onClose });
+
+    await user.click(noShowBtn());
+    expect(cancelNoShowBooking).toHaveBeenCalledWith(42, 'vendor never arrived');
+    expect(onChanged).toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalled();
+  });
+
+  it('does nothing when the no-show prompt is dismissed', async () => {
+    const user = userEvent.setup({ delay: null });
+    vi.spyOn(window, 'prompt').mockReturnValue(null);
+    renderCard({ ...base, status: 'in_progress', payment: paid });
+    await user.click(noShowBtn());
+    expect(cancelNoShowBooking).not.toHaveBeenCalled();
+  });
+
+  it('shows the server error when the no-show cancel fails', async () => {
+    const user = userEvent.setup({ delay: null });
+    vi.spyOn(window, 'prompt').mockReturnValue('vendor never arrived');
+    cancelNoShowBooking.mockRejectedValue(new Error('Only in_progress bookings can be cancelled'));
+    renderCard({ ...base, status: 'in_progress', payment: paid });
+    await user.click(noShowBtn());
+    expect(await screen.findByText(/Only in_progress bookings/)).toBeInTheDocument();
   });
 });

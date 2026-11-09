@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Button from '../ui/Button.jsx';
 import { useToast } from '../ui/toastContext.js';
-import { forceCompleteBooking } from '../../services/bookingsApi';
+import { forceCompleteBooking, cancelNoShowBooking } from '../../services/bookingsApi';
 import { formatINR } from '../../utils/format.js';
 import { isSuperAdmin } from '../../services/authApi.js';
 import RefundModal from '../views/finance/RefundModal.jsx';
@@ -57,6 +57,40 @@ export default function BookingActions({ booking, status, onStatusChange, onChan
   // towards a payout either.
   const canForce = superAdmin && !FORCE_COMPLETE_HIDDEN.has(status) && !paymentRefunded;
   const canResolve = superAdmin && status === 'disputed';
+  // DEV-26: a booking stuck in in_progress (vendor started, never finished /
+  // never showed) had no admin exit. Backend only accepts in_progress.
+  const canNoShow = superAdmin && status === 'in_progress';
+  const [noShowing, setNoShowing] = useState(false);
+  const [noShowError, setNoShowError] = useState('');
+
+  const handleNoShow = async () => {
+    // Same window.prompt convention as force-complete above.
+    const reason = window.prompt(
+      'Cancel this booking as a vendor no-show? The customer gets a FULL refund and a pending vendor payout is voided. Enter a reason for the audit log:',
+    );
+    if (reason === null) return;
+    if (!reason.trim()) {
+      setNoShowError('A reason is required.');
+      return;
+    }
+    setNoShowing(true);
+    setNoShowError('');
+    try {
+      const result = await cancelNoShowBooking(booking.id, reason.trim());
+      const refundCode = result?.refund?.code;
+      if (refundCode === 'REFUND_FAILED') {
+        toast.error(`Booking ${booking.id} cancelled, but the refund FAILED. Retry it from Finance.`);
+      } else {
+        toast.success(`Booking ${booking.id} cancelled as no-show.${refundCode === 'REFUND_ISSUED' ? ' Full refund issued.' : ''}`);
+      }
+      onChanged?.();
+      onClose();
+    } catch (err) {
+      setNoShowError(err.message || 'Failed to cancel this booking as no-show.');
+    } finally {
+      setNoShowing(false);
+    }
+  };
 
   const handleForceComplete = async () => {
     // window.prompt/confirm match this app's existing convention (see
@@ -101,7 +135,7 @@ export default function BookingActions({ booking, status, onStatusChange, onChan
     toast.success(`Refund issued for booking ${booking.id}.`);
   };
 
-  if (!canForce && !canResolve && !canRefund && !justResolved && dialog === null) return null;
+  if (!canForce && !canResolve && !canNoShow && !canRefund && !justResolved && dialog === null) return null;
 
   return (
     <div className="mt-6 pt-4 border-t border-white/10 space-y-2">
@@ -125,6 +159,15 @@ export default function BookingActions({ booking, status, onStatusChange, onChan
         <Button variant="danger" size="sm" className="w-full" onClick={() => setDialog('refund')}>
           {justResolved ? 'Refund payment' : 'Refund this booking'}
         </Button>
+      )}
+
+      {canNoShow && (
+        <>
+          {noShowError && <p className="text-xs text-red-300">{noShowError}</p>}
+          <Button variant="danger" size="sm" className="w-full" onClick={handleNoShow} disabled={noShowing}>
+            {noShowing ? 'Cancelling…' : 'Cancel (no-show)'}
+          </Button>
+        </>
       )}
 
       {canForce && (
