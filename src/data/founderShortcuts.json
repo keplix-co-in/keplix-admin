@@ -1,0 +1,12 @@
+[
+  { "label": "Razorpay dashboard", "url": "https://dashboard.razorpay.com/" },
+  { "label": "Meta Ads Manager", "url": "https://adsmanager.facebook.com/" },
+  { "label": "Instagram", "url": "https://www.instagram.com/" },
+  { "label": "Gmail", "url": "https://mail.google.com/" },
+  { "label": "Google Calendar", "url": "https://calendar.google.com/" },
+  { "label": "Play Console", "url": "https://play.google.com/console/" },
+  { "label": "Supabase", "url": "https://supabase.com/dashboard/" },
+  { "label": "Notion", "url": "https://www.notion.so/" },
+  { "label": "Vercel", "url": "https://vercel.com/dashboard" },
+  { "label": "Partner site", "url": "https://partner.keplix.co.in/" }
+]

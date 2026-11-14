@@ -3,6 +3,7 @@ import { Icon } from "../ui/Icon";
 import navItems from "../../data/SidebarMock";
 import { getVendorMetrics } from "../../services/vendorsApi";
 import { getAdminUser } from "../../services/authApi";
+import { FOUNDER_SCREENS } from "../views/founder/registry";
 
 // Role slugs the API returns -> what an operator should actually read.
 const ROLE_LABELS = {
@@ -10,7 +11,9 @@ const ROLE_LABELS = {
   admin: "Admin",
 };
 
-export function Sidebar({ activeNav, setActiveNav, onLogout }) {
+export function Sidebar({ activeNav, subNav, setActiveNav, onLogout }) {
+  // Founder dashboard (2026-11-14): same sidebar, different list.
+  const founder = activeNav === "founder";
   // The Vendors badge was hardcoded to "54" and the Finance badge to "₹1.2M" --
   // invented numbers sitting in permanent view of whoever runs this panel.
   //
@@ -46,15 +49,21 @@ export function Sidebar({ activeNav, setActiveNav, onLogout }) {
           <div className="w-9 h-9 rounded-lg bg-linear-to-br from-brand-red to-[#ff4400] flex items-center justify-center text-lg shadow-[0_4px_16px_rgba(255,61,61,0.4)]">🔧</div>
           <div>
             <div className="font-syne font-extrabold text-base text-white leading-none">KEPLIX</div>
-            <div className="text-xs text-brand-red/70 tracking-[1.5px] font-semibold">ADMIN PANEL</div>
+            <div className="text-xs text-brand-red/70 tracking-[1.5px] font-semibold">{founder ? "FOUNDER" : "ADMIN PANEL"}</div>
           </div>
         </div>
       </div>
 
       {/* Nav */}
       <div className="flex-1">
-        <div className="text-[9px] text-brand-gray-600 tracking-[1.5px] font-bold px-2 pb-2 uppercase">Main Menu</div>
-        {navItems.map(item => ( 
+        <div className="text-[9px] text-brand-gray-600 tracking-[1.5px] font-bold px-2 pb-2 uppercase">{founder ? "Founder" : "Main Menu"}</div>
+        {founder && Object.entries(FOUNDER_SCREENS).map(([id, s]) => (
+          <div key={id} onClick={() => setActiveNav(`founder/${id}`)}
+            className={`flex items-center gap-3 py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${subNav === id ? "bg-brand-red/10 text-white" : "text-white/35 hover:text-white/70 hover:bg-white/5"}`}>
+            {s.label}
+          </div>
+        ))}
+        {!founder && navItems.map(item => ( 
           <div key={item.id} className={`flex items-center gap-3 py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${activeNav === item.id ? "bg-brand-red/10 text-white" : "text-white/35 hover:text-white/70 hover:bg-white/5"}`}onClick={() => setActiveNav(item.id)}>
             <Icon name={item.icon} size={15} color={activeNav === item.id ? "#ff3d3d" : "currentColor"} />
             {item.label}

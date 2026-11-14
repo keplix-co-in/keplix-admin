@@ -12,10 +12,12 @@ import BlogsView from '../components/views/BlogsView';
 import WalkInJobsView from '../components/views/WalkInJobsView';
 import HealthComponentsView from '../components/views/HealthComponentsView';
 import OffersView from '../components/views/OffersView';
+import FounderView from '../components/views/founder/FounderView';
+import FounderLayout from '../components/views/founder/FounderLayout';
 import { Sidebar } from '../components/layout/Sidebar';
 import { Topbar } from '../components/layout/Topbar';
 import Login from './Login';
-import { isAdminAuthenticated, adminLogout, refreshAdminToken, hasStoredSession, SESSION_ENDED_EVENT } from '../services/authApi';
+import { isAdminAuthenticated, adminLogout, refreshAdminToken, hasStoredSession, SESSION_ENDED_EVENT, isSuperAdmin } from '../services/authApi';
 
 export default function KeplixAdmin() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => isAdminAuthenticated());
@@ -32,6 +34,8 @@ export default function KeplixAdmin() {
   const navigate = useNavigate();
   const location = useLocation();
   const activeNav = location.pathname.replace(/^\//, '').split('/')[0] || 'dashboard';
+  // Founder dashboard (2026-11-14): /founder/<screen>; subNav picks the screen.
+  const subNav = location.pathname.split('/')[2] || '';
   const setActiveNav = (id) => navigate(`/${id}`);
   const [bookingFilter, setBookingFilter] = useState('All');
   const [vendorFilter, setVendorFilter] = useState('All');
@@ -107,16 +111,30 @@ export default function KeplixAdmin() {
     );
   }
 
+  // Founder side (2026-11-14 redesign): its own light shell; Admin stays dark.
+  if (activeNav === 'founder') {
+    return (
+      <ToastProvider>
+        <FounderLayout subNav={subNav} setActiveNav={setActiveNav} onLogout={handleLogout}>
+          <Routes>
+            <Route path="/founder/:screen" element={isSuperAdmin() ? <FounderView /> : <Navigate to="/dashboard" replace />} />
+            <Route path="*" element={<Navigate to={isSuperAdmin() ? '/founder/today' : '/dashboard'} replace />} />
+          </Routes>
+        </FounderLayout>
+      </ToastProvider>
+    );
+  }
+
   return (
     <ToastProvider>
     <div className="flex h-screen bg-brand-black font-sans overflow-hidden text-white">
       {/* -- SIDEBAR -- */}
-      <Sidebar activeNav={activeNav} setActiveNav={setActiveNav} onLogout={handleLogout} />
+      <Sidebar activeNav={activeNav} subNav={subNav} setActiveNav={setActiveNav} onLogout={handleLogout} />
 
       {/* -- MAIN -- */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <Topbar activeNav={activeNav} time={time} setActiveNav={setActiveNav} />
+        <Topbar activeNav={activeNav} subNav={subNav} time={time} setActiveNav={setActiveNav} />
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
@@ -133,6 +151,9 @@ export default function KeplixAdmin() {
             <Route path="/users" element={<UsersView />} />
             <Route path="/blogs" element={<BlogsView />} />
             <Route path="/settings" element={<SettingsView />} />
+            {/* Founder dashboard: super_admin only; everyone else goes to /dashboard. */}
+            <Route path="/founder" element={<Navigate to="/founder/today" replace />} />
+            <Route path="/founder/:screen" element={isSuperAdmin() ? <FounderView /> : <Navigate to="/dashboard" replace />} />
             {/* Unknown path -- back to a known-good screen rather than a blank page. */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
