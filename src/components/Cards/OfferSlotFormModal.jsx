@@ -3,7 +3,7 @@ import { saveOfferSlotByKey, setOfferSlotTargets } from '../../services/offersAp
 import { getVendors } from '../../services/vendorsApi';
 
 const inputClass =
-  'w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(255,61,61,0.5)] transition-all';
+  'w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(217,4,13,0.5)] transition-all';
 const labelClass = 'block text-xs font-semibold text-white/60 mb-2 ml-1';
 const hintClass = 'text-xs text-white/30 mt-1.5 ml-1';
 const sectionClass = 'mb-2 text-xs font-semibold uppercase tracking-wide text-white/30';
@@ -242,7 +242,7 @@ export default function OfferSlotFormModal({ placement, slot, onClose, onSaved }
                   type="checkbox"
                   checked={targets.includes(id)}
                   onChange={() => toggleVendor(id)}
-                  className="accent-[#ff3d3d]"
+                  className="accent-[#d9040d]"
                 />
                 <span className="text-sm text-white/70 truncate">{name}</span>
               </label>
@@ -255,7 +255,7 @@ export default function OfferSlotFormModal({ placement, slot, onClose, onSaved }
             type="checkbox"
             checked={form.is_active}
             onChange={(e) => setForm({ ...form, is_active: e.target.checked })}
-            className="accent-[#ff3d3d]"
+            className="accent-[#d9040d]"
           />
           <span className="text-sm text-white/70">Switched on</span>
         </label>

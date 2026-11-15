@@ -59,7 +59,7 @@ export default function SettingsView() {
               <button className="py-2 px-4 rounded-lg bg-transparent border border-white/10 text-white/70 hover:bg-white/5 hover:text-white transition-all text-sm font-semibold">
                 Cancel
               </button>
-              <button className="py-2 px-5 rounded-lg bg-linear-to-r from-brand-red to-[#ff4400] text-white border-none cursor-pointer shadow-[0_4px_14px_rgba(255,61,61,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)] text-sm font-semibold">
+              <button className="py-2 px-5 rounded-lg bg-linear-to-r from-brand-red to-[#ff4400] text-white border-none cursor-pointer shadow-[0_4px_14px_rgba(217,4,13,0.3)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_20px_rgba(217,4,13,0.4)] text-sm font-semibold">
                 Save Changes
               </button>
             </>
@@ -97,11 +97,11 @@ export default function SettingsView() {
               onClick={() => setActiveTab(tab.id)}
               className={`flex items-center gap-3 w-full py-3 px-4 rounded-xl text-sm font-medium transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-[rgba(255,61,61,0.12)] text-white border border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]'
+                  ? 'bg-[rgba(217,4,13,0.12)] text-white border border-[rgba(217,4,13,0.2)] shadow-[inset_2px_0_0_#d9040d]'
                   : 'bg-transparent text-white/40 border border-transparent hover:bg-white/5 hover:text-white/70'
               }`}
             >
-              <Icon name={tab.icon} size={16} color={activeTab === tab.id ? '#ff3d3d' : 'currentColor'} />
+              <Icon name={tab.icon} size={16} color={activeTab === tab.id ? '#d9040d' : 'currentColor'} />
               {tab.label}
             </button>
           ))}

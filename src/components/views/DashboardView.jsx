@@ -72,7 +72,7 @@ export default function DashboardView() {
     { label: "Bookings Today", value: metrics.bookingsToday || 0, icon: "📦", delta: "Live", color: "#3b82f6" },
     { label: "Active Vendors", value: metrics.activeVendors || 0, icon: "🏪", delta: "Live", color: "#8b5cf6" },
     { label: "New Users Today", value: metrics.newUsersToday || 0, icon: "👥", delta: "Live", color: "#6366f1" },
-    { label: "Pending Payouts", value: formatINR(metrics.pendingPayouts), icon: "⏳", delta: "Action", color: "#ff3d3d", alert: true }
+    { label: "Pending Payouts", value: formatINR(metrics.pendingPayouts), icon: "⏳", delta: "Action", color: "#d9040d", alert: true }
   ] : null;
 
   if (loading) {
@@ -106,7 +106,7 @@ export default function DashboardView() {
       {/* KPIs */}
       <div className="grid grid-cols-6 gap-3.5 mb-6">
         {liveKpis.map((k, i) => (
-          <div key={i} className={`bg-brand-gray-100 rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25 bg-linear-to-br from-[#1a0e0e] to-brand-gray-100' : ''}`}>
+          <div key={i} className={`bg-brand-gray-100 rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(217,4,13,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(217,4,13,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25 bg-linear-to-br from-[#1a0e0e] to-brand-gray-100' : ''}`}>
             {k.alert && <div className="absolute top-0 left-0 right-0 h-0.5 bg-linear-to-r from-brand-red to-[#ff6b00]" />}
             <div className="flex items-center justify-between mb-3">
               <span className="text-lg">{k.icon}</span>
@@ -144,19 +144,19 @@ export default function DashboardView() {
               <AreaChart data={revenueData}>
                 <defs>
                   <linearGradient id="gmvGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#ff3d3d" stopOpacity={0.12}/>
-                    <stop offset="95%" stopColor="#ff3d3d" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#d9040d" stopOpacity={0.12}/>
+                    <stop offset="95%" stopColor="#d9040d" stopOpacity={0}/>
                   </linearGradient>
                   <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#ff3d3d" stopOpacity={0.4}/>
-                    <stop offset="95%" stopColor="#ff3d3d" stopOpacity={0}/>
+                    <stop offset="5%"  stopColor="#d9040d" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#d9040d" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis dataKey="day" tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: "rgba(255,255,255,0.3)", fontSize: 10 }} axisLine={false} tickLine={false} tickFormatter={v => `₹${(v/1000).toFixed(0)}k`} />
                 <Tooltip content={<ChartTooltip />} />
-                <Area type="monotone" dataKey="gmv" stroke="rgba(255,61,61,0.35)" strokeWidth={2} fill="url(#gmvGrad)" />
-                <Area type="monotone" dataKey="rev" stroke="#ff3d3d" strokeWidth={2.5} fill="url(#revGrad)" />
+                <Area type="monotone" dataKey="gmv" stroke="rgba(217,4,13,0.35)" strokeWidth={2} fill="url(#gmvGrad)" />
+                <Area type="monotone" dataKey="rev" stroke="#d9040d" strokeWidth={2.5} fill="url(#revGrad)" />
               </AreaChart>
             </ResponsiveContainer>
           </div>
@@ -216,7 +216,7 @@ export default function DashboardView() {
                     <p className="text-brand-gray-800 text-xs">{payload[0].value} bookings</p>
                   </div>;
                 }} />
-                <Bar dataKey="bookings" fill="#ff3d3d" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="bookings" fill="#d9040d" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>

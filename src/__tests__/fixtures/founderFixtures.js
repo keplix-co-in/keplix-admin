@@ -98,7 +98,7 @@ export const sampleGoogleAds = {
     { id: 'g2', name: 'YouTube · brand video', status: 'PAUSED', spend: { 7: 0, 14: 900, 30: 3100 }, results: { 7: 0, 14: 2, 30: 7 }, purchaseValue: null, cprTrend: [] },
   ],
 };
-export const sampleGoogleSource = { messages: sampleMessages.filter((m) => m.app !== 'whatsapp'), calendar: sampleCalendar, youtube: sampleYouTube, googleAds: sampleGoogleAds };
+export const sampleGoogleSource = { messages: sampleMessages.filter((m) => m.app === 'gmail'), calendar: sampleCalendar, youtube: sampleYouTube, googleAds: sampleGoogleAds };
 export const sampleWhatsAppSource = { messages: sampleMessages.filter((m) => m.app === 'whatsapp') };
 export const sampleBrief = {
   text: [

@@ -46,7 +46,7 @@ export default function BookingsView({ filter, setFilter }) {
         {bookingFilters.map(({ label }) => (
           <button 
             key={label} 
-            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === label ? " text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`}
+            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === label ? " text-white bg-[rgba(217,4,13,0.12)] border-[rgba(217,4,13,0.2)] shadow-[inset_2px_0_0_#d9040d]" : ""}`}
             onClick={() => setFilter(label)}
           >
             {label}

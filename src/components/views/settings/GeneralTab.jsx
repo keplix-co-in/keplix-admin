@@ -55,14 +55,14 @@ export default function GeneralTab() {
             </label>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-xl border border-[rgba(255,61,61,0.2)] bg-[rgba(255,61,61,0.05)]">
+          <div className="flex items-center justify-between p-4 rounded-xl border border-[rgba(217,4,13,0.2)] bg-[rgba(217,4,13,0.05)]">
             <div>
               <h4 className="text-sm font-semibold text-white mb-1">Beta Features</h4>
               <p className="text-xs text-brand-red/70 font-medium">Early access to upcoming updates.</p>
             </div>
             <label className="relative inline-flex items-center cursor-pointer">
               <input type="checkbox" className="sr-only peer" defaultChecked />
-              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-red shadow-[0_0_10px_rgba(255,61,61,0.4)]"></div>
+              <div className="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-brand-red shadow-[0_0_10px_rgba(217,4,13,0.4)]"></div>
             </label>
           </div>
         </div>

@@ -13,7 +13,7 @@ export const FOUNDER_SCREENS = {
   calendar: { label: 'Calendar', group: 'Schedule', el: CalendarScreen },
   sales: { label: 'Sales', group: 'Business', el: SalesScreen },
   ads: { label: 'Ads', group: 'Business', el: AdsScreen },
-  instagram: { label: 'Instagram', group: 'Business', el: InstagramScreen },
+  instagram: { label: 'Instagram reels', group: 'Business', el: InstagramScreen },
   youtube: { label: 'YouTube', group: 'Business', el: YouTubeScreen },
   shortcuts: { label: 'Quick links', group: 'Setup', el: ShortcutsScreen },
   apps: { label: 'Connected apps', group: 'Setup', el: ConnectedAppsScreen },

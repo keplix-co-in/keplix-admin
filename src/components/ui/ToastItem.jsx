@@ -7,7 +7,7 @@
  */
 const VARIANTS = {
   success: { color: '#4CAF50', bg: 'rgba(76,175,80,0.12)', border: 'rgba(76,175,80,0.3)', icon: '✓' },
-  error: { color: '#ff6b6b', bg: 'rgba(255,61,61,0.12)', border: 'rgba(255,61,61,0.3)', icon: '!' },
+  error: { color: '#ff6b6b', bg: 'rgba(217,4,13,0.12)', border: 'rgba(217,4,13,0.3)', icon: '!' },
   info: { color: '#2196F3', bg: 'rgba(33,150,243,0.12)', border: 'rgba(33,150,243,0.3)', icon: 'i' },
 };
 

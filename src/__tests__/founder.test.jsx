@@ -36,12 +36,20 @@ const { default: FounderView } = await import('../components/views/founder/Found
 const { FOUNDER_SCREENS } = await import('../components/views/founder/registry');
 const { isCampaignFlagged, pctChange, buildNeedsYou, salesSeries, searchFounder, isRunning } = await import('../components/views/founder/logic');
 const { default: FounderLayout } = await import('../components/views/founder/FounderLayout');
-const { sampleAds, sampleSales, sampleGoogleAds, sampleYouTube, sampleCalendar } = await import('../data/founderSample');
+// 2026-11-15: Sample mode is gone from the app; the old sample data lives on as test fixtures.
+const { sampleAds, sampleSales, sampleGoogleAds, sampleYouTube, sampleCalendar, sampleAdsSource, sampleInstagramSource, sampleGoogleSource, sampleWhatsAppSource, sampleBrief } = await import('./fixtures/founderFixtures');
 
 beforeEach(() => {
   superAdmin.value = true;
   localStorage.clear();
   [getFounderSales, getFounderAds, getFounderInstagram, getFounderGoogle, getFounderWhatsApp, getFounderBrief, askFounder].forEach((f) => f.mockReset());
+  // Every source is always live now; by default the API answers with the fixtures.
+  getFounderSales.mockResolvedValue(sampleSales);
+  getFounderAds.mockResolvedValue(sampleAdsSource);
+  getFounderInstagram.mockResolvedValue(sampleInstagramSource);
+  getFounderGoogle.mockResolvedValue(sampleGoogleSource);
+  getFounderWhatsApp.mockResolvedValue(sampleWhatsAppSource);
+  getFounderBrief.mockResolvedValue(sampleBrief);
 });
 
 describe('PanelToggle', () => {
@@ -94,31 +102,31 @@ const renderScreen = (path) => render(
 );
 
 describe('Founder screens', () => {
-  it.each(Object.keys(FOUNDER_SCREENS))('%s renders on sample data', (id) => {
+  it.each(Object.keys(FOUNDER_SCREENS))('%s renders live data', async (id) => {
     renderScreen(`/founder/${id}`);
+    await waitFor(() => expect(document.body.textContent).not.toMatch(/Loading…/));
     expect(document.body.textContent.length).toBeGreaterThan(20);
+    expect(document.body.textContent).not.toMatch(/Sample (data|mode)/);
   });
 
-  it('an unknown screen goes to Today', () => {
+  it('an unknown screen goes to Today', async () => {
     renderScreen('/founder/nope');
+    await screen.findByText(/Written by/);
     expect(screen.getByText(/Needs you/)).toBeInTheDocument();
     expect(screen.getByText(/, Asha$/)).toBeInTheDocument();
   });
 
-  it('a source without server keys says Not connected in Live mode', async () => {
+  it('a source without server keys says Not connected', async () => {
     getFounderAds.mockRejectedValue(notConfigured());
     renderScreen('/founder/ads');
-    fireEvent.click(screen.getAllByRole('button', { name: 'live' })[0]);
     await waitFor(() => expect(screen.getByText('Not connected')).toBeInTheDocument());
-    expect(localStorage.getItem('founderMode:meta_ads')).toBe('live');
   });
 
   it('Ads Live shows real campaigns', async () => {
     getFounderAds.mockResolvedValue({ campaigns: [{ id: 'x1', name: 'Doorstep wash', status: 'ACTIVE', spend: { 7: 700, 14: 1400, 30: 3000 }, results: { 7: 10, 14: 20, 30: 40 }, purchaseValue: null, cprTrend: [70, 70, 70, 70] }], fetchedAt: new Date().toISOString() });
     renderScreen('/founder/ads');
-    fireEvent.click(screen.getAllByRole('button', { name: 'live' })[0]);
     await waitFor(() => expect(screen.getByText('Doorstep wash')).toBeInTheDocument());
-    fireEvent.click(screen.getByRole('button', { name: 'Refresh' }));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Refresh' })[0]);
     await waitFor(() => expect(getFounderAds).toHaveBeenLastCalledWith(true));
   });
 
@@ -129,7 +137,6 @@ describe('Founder screens', () => {
       fetchedAt: new Date().toISOString(),
     });
     renderScreen('/founder/instagram');
-    fireEvent.click(screen.getByRole('button', { name: 'live' }));
     await waitFor(() => expect(screen.getByText('Price?', { exact: false })).toBeInTheDocument());
     expect(screen.getAllByRole('link', { name: 'Wash at home' })[0]).toHaveAttribute('href', 'https://instagram.com/r1');
   });
@@ -137,58 +144,43 @@ describe('Founder screens', () => {
   it('Messages Live shows Gmail; a missing link renders as plain text', async () => {
     getFounderGoogle.mockResolvedValue({ messages: [{ id: 'g1', app: 'gmail', from: 'Razorpay', text: 'Docs needed', time: new Date().toISOString(), link: null }], calendar: [], fetchedAt: new Date().toISOString() });
     renderScreen('/founder/messages');
-    fireEvent.click(screen.getAllByRole('button', { name: 'live' })[0]);
     await waitFor(() => expect(screen.getByText('Razorpay')).toBeInTheDocument());
     expect(screen.queryByRole('link', { name: /Razorpay/ })).toBeNull();
   });
 
   it('Connected apps lists the server keys to add for an unset source', async () => {
     getFounderGoogle.mockRejectedValue(notConfigured());
-    localStorage.setItem('founderMode:google', 'live');
     renderScreen('/founder/apps');
     await waitFor(() => expect(screen.getByText(/FOUNDER_APPS_SCRIPT_URL/)).toBeInTheDocument());
   });
 
-  it('Messages merges Gmail and WhatsApp, each with its own switch', async () => {
+  it('All messages merges Gmail, WhatsApp and Instagram comments', async () => {
     getFounderWhatsApp.mockResolvedValue({ messages: [{ id: 'SM1', app: 'whatsapp', from: '+91 ••••• 3210', text: 'Is my car ready?', time: new Date().toISOString(), link: null }], fetchedAt: new Date().toISOString() });
-    localStorage.setItem('founderMode:whatsapp', 'live');
     renderScreen('/founder/messages');
     await waitFor(() => expect(screen.getByText('Is my car ready?')).toBeInTheDocument());
     expect(screen.getByText('+91 ••••• 3210')).toBeInTheDocument();
-    // Gmail stays on Sample: its sample mail is still listed, sample WhatsApp is not.
-    expect(screen.getByText(/RazorpayX activation/)).toBeInTheDocument();
-    expect(screen.queryByText(/Payout for last week/)).toBeNull();
+    expect(await screen.findByText(/RazorpayX activation/)).toBeInTheDocument();
+    expect(screen.getAllByText(sampleInstagramSource.comments[0].text).length).toBeGreaterThan(0);
   });
 
-  it('WhatsApp without Twilio keys says Not connected; Gmail list still shows', async () => {
+  it('WhatsApp without Twilio keys says Not connected; Gmail still shows', async () => {
     getFounderWhatsApp.mockRejectedValue(notConfigured());
-    localStorage.setItem('founderMode:whatsapp', 'live');
     renderScreen('/founder/messages');
     await waitFor(() => expect(screen.getByText('Not connected')).toBeInTheDocument());
-    expect(screen.getByText(/RazorpayX activation/)).toBeInTheDocument();
+    expect(await screen.findByText(/RazorpayX activation/)).toBeInTheDocument();
   });
 
   it('Today shows the live AI brief', async () => {
     getFounderBrief.mockResolvedValue({ text: '- Sales flat\nDo first: call Rohit', generatedAt: new Date().toISOString(), model: 'gemini-2.5-flash' });
-    localStorage.setItem('founderMode:ai_brief', 'live');
     renderScreen('/founder/today');
     await waitFor(() => expect(screen.getByText(/Do first: call Rohit/)).toBeInTheDocument());
     expect(screen.getByText(/Written by gemini-2.5-flash/)).toBeInTheDocument();
   });
 
-  it('Ask in Sample mode answers locally without calling the API', () => {
-    renderScreen('/founder/today');
-    fireEvent.change(screen.getByLabelText('Ask about your business'), { target: { value: 'How are sales?' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Ask' }));
-    expect(screen.getByText(/This is sample mode/)).toBeInTheDocument();
-    expect(askFounder).not.toHaveBeenCalled();
-  });
-
-  it('Ask in Live mode shows the answer, or the error', async () => {
+  it('Ask shows the answer, or the error', async () => {
     getFounderBrief.mockResolvedValue({ text: 'brief', generatedAt: new Date().toISOString(), model: 'gemini-2.5-flash' });
     askFounder.mockResolvedValueOnce({ answer: 'Sales were ₹4,000.' })
       .mockRejectedValueOnce(Object.assign(new Error('Too many'), { code: 'RATE_LIMITED' }));
-    localStorage.setItem('founderMode:ai_brief', 'live');
     renderScreen('/founder/today');
     const box = screen.getByLabelText('Ask about your business');
     fireEvent.change(box, { target: { value: 'How are sales?' } });
@@ -201,23 +193,20 @@ describe('Founder screens', () => {
 
   it('Connected apps names GEMINI_API_KEY when AI is not set up', async () => {
     getFounderBrief.mockRejectedValue(notConfigured());
-    localStorage.setItem('founderMode:ai_brief', 'live');
     renderScreen('/founder/apps');
     await waitFor(() => expect(screen.getByText(/GEMINI_API_KEY/)).toBeInTheDocument());
   });
 
-  it('Sales Live loads from the API', async () => {
+  it('Sales loads from the API', async () => {
     getFounderSales.mockResolvedValue({ ...sampleSales, today: { amount: 4321, count: 2 } });
     renderScreen('/founder/sales');
-    fireEvent.click(screen.getByRole('button', { name: 'live' }));
     await waitFor(() => expect(screen.getByText('₹4,321')).toBeInTheDocument());
   });
 
-  it('Sales Live shows the error when the API fails', async () => {
+  it('Sales shows the error when the API fails', async () => {
     getFounderSales.mockRejectedValue(new Error('boom'));
     renderScreen('/founder/sales');
-    fireEvent.click(screen.getByRole('button', { name: 'live' }));
-    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent('boom'));
+    await waitFor(() => expect(screen.getAllByRole('alert')[0]).toHaveTextContent('boom'));
   });
 });
 
@@ -254,20 +243,19 @@ describe('2026-11-14 redesign helpers', () => {
 });
 
 describe('2026-11-14 redesign screens', () => {
-  it('Ads shows Google Ads campaigns as Running / Paused', () => {
+  it('Ads shows Google Ads campaigns as Running / Paused', async () => {
     renderScreen('/founder/ads');
-    expect(screen.getByText('Search · car service near me')).toBeInTheDocument();
+    expect(await screen.findByText('Search · car service near me')).toBeInTheDocument();
     expect(screen.getAllByText('Running').length).toBeGreaterThan(0);
     expect(screen.getAllByText('Paused').length).toBeGreaterThan(0);
   });
-  it('YouTube lists videos and subscribers', () => {
+  it('YouTube lists videos and subscribers', async () => {
     renderScreen('/founder/youtube');
-    expect(screen.getByText('Doorstep car wash in 60 seconds')).toBeInTheDocument();
+    expect(await screen.findByText('Doorstep car wash in 60 seconds')).toBeInTheDocument();
     expect(screen.getByText('1,240')).toBeInTheDocument();
   });
-  it('YouTube Live without YouTube data says it is not set up', async () => {
+  it('YouTube without YouTube data says it is not set up', async () => {
     getFounderGoogle.mockResolvedValue({ messages: [], calendar: [], youtube: null, googleAds: null, fetchedAt: new Date().toISOString() });
-    localStorage.setItem('founderMode:google', 'live');
     renderScreen('/founder/youtube');
     await waitFor(() => expect(screen.getByText(/YouTube is not set up yet/)).toBeInTheDocument());
   });
@@ -281,15 +269,58 @@ describe('2026-11-14 redesign screens', () => {
     expect(screen.getAllByText(/^Open/).length).toBe(6);
     expect(screen.queryByText(/Disconnect/i)).toBeNull();
   });
-  it('FounderLayout groups the sidebar and searches loaded data', () => {
+  it('FounderLayout groups the sidebar and searches loaded data', async () => {
     const nav = vi.fn();
     render(<MemoryRouter><FounderLayout subNav="today" setActiveNav={nav} onLogout={() => {}}><div>child</div></FounderLayout></MemoryRouter>);
+    await waitFor(() => expect(screen.getByRole('button', { name: /All messages/ })).toHaveTextContent(/[1-9]/));
     ['Home', 'Business', 'Setup'].forEach((g) => expect(screen.getByText(g)).toBeInTheDocument());
     fireEvent.click(screen.getByRole('button', { name: /YouTube/ }));
     expect(nav).toHaveBeenCalledWith('founder/youtube');
+    // 2026-11-15: Messages opens into per-app rows with app icons.
+    ['All messages', 'Email', 'WhatsApp'].forEach((t) => expect(screen.getByRole('button', { name: new RegExp(t) })).toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /Instagram reels/ })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Search founder dashboard'), { target: { value: 'razorpay' } });
     expect(screen.getAllByRole('option').length).toBeGreaterThan(0);
     fireEvent.change(screen.getByLabelText('Search founder dashboard'), { target: { value: 'zzzz' } });
     expect(screen.getByText('No matches.')).toBeInTheDocument();
+  });
+});
+
+describe('2026-11-15 separate message views', () => {
+  it('?app=gmail shows only email, with Open in Gmail', async () => {
+    renderScreen('/founder/messages?app=gmail');
+    expect(await screen.findByText(/RazorpayX activation/)).toBeInTheDocument();
+    expect(screen.queryByText(sampleWhatsAppSource.messages[0].text)).toBeNull();
+    expect(screen.queryByText(sampleInstagramSource.comments[0].text)).toBeNull();
+    expect(screen.getByRole('tab', { name: /Email/ })).toHaveAttribute('aria-selected', 'true');
+  });
+  it('?app=whatsapp shows only WhatsApp chats', async () => {
+    renderScreen('/founder/messages?app=whatsapp');
+    expect(await screen.findByText(sampleWhatsAppSource.messages[0].text)).toBeInTheDocument();
+    expect(screen.queryByText(/RazorpayX activation/)).toBeNull();
+    expect(screen.getByText(/Reply in WhatsApp itself/)).toBeInTheDocument();
+  });
+  it('?app=instagram shows only Instagram comments, each with its reel', async () => {
+    renderScreen('/founder/messages?app=instagram');
+    const c = sampleInstagramSource.comments[0];
+    expect(await screen.findByText(c.text)).toBeInTheDocument();
+    expect(screen.getAllByText(/on reel:/).length).toBeGreaterThan(0);
+    expect(screen.queryByText(/RazorpayX activation/)).toBeNull();
+  });
+  it('clicking a tab switches the view', async () => {
+    renderScreen('/founder/messages');
+    await screen.findByText(/RazorpayX activation/);
+    fireEvent.click(screen.getByRole('tab', { name: /WhatsApp/ }));
+    await waitFor(() => expect(screen.queryByText(/RazorpayX activation/)).toBeNull());
+  });
+  it('an empty inbox says so instead of showing made-up data', async () => {
+    getFounderGoogle.mockResolvedValue({ messages: [], calendar: [], fetchedAt: new Date().toISOString() });
+    renderScreen('/founder/messages?app=gmail');
+    expect(await screen.findByText('No unread email.')).toBeInTheDocument();
+  });
+  it('the sidebar Instagram row opens the Instagram messages view', async () => {
+    const nav = vi.fn();
+    render(<MemoryRouter initialEntries={['/founder/messages?app=instagram']}><FounderLayout subNav="messages" setActiveNav={nav} onLogout={() => {}}><div /></FounderLayout></MemoryRouter>);
+    expect(screen.getByRole('button', { name: /^Instagram\b(?! reels)/ })).toHaveAttribute('aria-current', 'page');
   });
 });

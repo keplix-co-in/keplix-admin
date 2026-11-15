@@ -11,7 +11,7 @@ export const bookingStatusConfig = {
   service_completed: { label: "Awaiting customer", color: "#00BCD4", bg: "rgba(0,188,212,0.1)",    border: "rgba(0,188,212,0.2)" },
   user_confirmed:    { label: "Completed",         color: "#4CAF50", bg: "rgba(76,175,80,0.1)",    border: "rgba(76,175,80,0.2)" },
   completed:         { label: "Completed",         color: "#4CAF50", bg: "rgba(76,175,80,0.1)",    border: "rgba(76,175,80,0.2)" },
-  disputed:          { label: "Disputed",          color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",    border: "rgba(255,61,61,0.2)" },
+  disputed:          { label: "Disputed",          color: "#d9040d", bg: "rgba(217,4,13,0.1)",    border: "rgba(217,4,13,0.2)" },
   cancelled:         { label: "Cancelled",         color: "#666677", bg: "rgba(100,100,120,0.1)",  border: "rgba(100,100,120,0.2)" },
   rejected:          { label: "Rejected",          color: "#b0607a", bg: "rgba(176,96,122,0.1)",   border: "rgba(176,96,122,0.2)" },
   refunded:          { label: "Refunded",          color: "#8BC34A", bg: "rgba(139,195,74,0.1)",   border: "rgba(139,195,74,0.2)" },
@@ -55,7 +55,7 @@ export const bookingFilters = [
 export const vendorStatusConfig = {
   approved:  { label: "Approved",  color: "#4CAF50", bg: "rgba(76,175,80,0.1)",   border: "rgba(76,175,80,0.2)" },
   pending:   { label: "Pending",   color: "#ff9944", bg: "rgba(255,153,68,0.1)",  border: "rgba(255,153,68,0.2)" },
-  suspended: { label: "Suspended", color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",   border: "rgba(255,61,61,0.2)" },
+  suspended: { label: "Suspended", color: "#d9040d", bg: "rgba(217,4,13,0.1)",   border: "rgba(217,4,13,0.2)" },
 };
 
 export const walkInJobStatusConfig = {
@@ -68,13 +68,13 @@ export const walkInJobStatusConfig = {
 export const healthStatusConfig = {
   GOOD:      { label: "Good",             color: "#4CAF50", bg: "rgba(76,175,80,0.1)",  border: "rgba(76,175,80,0.2)" },
   ATTENTION: { label: "Attention needed", color: "#ff9944", bg: "rgba(255,153,68,0.1)", border: "rgba(255,153,68,0.2)" },
-  REPLACE:   { label: "Replace",          color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",  border: "rgba(255,61,61,0.2)" },
+  REPLACE:   { label: "Replace",          color: "#d9040d", bg: "rgba(217,4,13,0.1)",  border: "rgba(217,4,13,0.2)" },
 };
 
 export const userStatusConfig = {
   active:    { label: "Active",    color: "#4CAF50", bg: "rgba(76,175,80,0.1)",   border: "rgba(76,175,80,0.2)" },
   inactive:  { label: "Inactive",  color: "#ff9944", bg: "rgba(255,153,68,0.1)",  border: "rgba(255,153,68,0.2)" },
-  banned:    { label: "Banned",    color: "#ff3d3d", bg: "rgba(255,61,61,0.1)",   border: "rgba(255,61,61,0.2)" },
+  banned:    { label: "Banned",    color: "#d9040d", bg: "rgba(217,4,13,0.1)",   border: "rgba(217,4,13,0.2)" },
 };
 
 // Was defined locally in BlogsView.jsx -- centralized here alongside the

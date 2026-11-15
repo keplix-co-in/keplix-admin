@@ -46,7 +46,7 @@ export function Sidebar({ activeNav, subNav, setActiveNav, onLogout }) {
       {/* Logo */}
       <div className="px-2 pb-7 border-b border-brand-gray-400 mb-5">
         <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-lg bg-linear-to-br from-brand-red to-[#ff4400] flex items-center justify-center text-lg shadow-[0_4px_16px_rgba(255,61,61,0.4)]">🔧</div>
+          <div className="w-9 h-9 rounded-lg bg-linear-to-br from-brand-red to-[#ff4400] flex items-center justify-center text-lg shadow-[0_4px_16px_rgba(217,4,13,0.4)]">🔧</div>
           <div>
             <div className="font-syne font-extrabold text-base text-white leading-none">KEPLIX</div>
             <div className="text-xs text-brand-red/70 tracking-[1.5px] font-semibold">{founder ? "FOUNDER" : "ADMIN PANEL"}</div>
@@ -65,7 +65,7 @@ export function Sidebar({ activeNav, subNav, setActiveNav, onLogout }) {
         ))}
         {!founder && navItems.map(item => ( 
           <div key={item.id} className={`flex items-center gap-3 py-3 px-2 rounded-lg cursor-pointer transition-all duration-200 text-sm font-medium ${activeNav === item.id ? "bg-brand-red/10 text-white" : "text-white/35 hover:text-white/70 hover:bg-white/5"}`}onClick={() => setActiveNav(item.id)}>
-            <Icon name={item.icon} size={15} color={activeNav === item.id ? "#ff3d3d" : "currentColor"} />
+            <Icon name={item.icon} size={15} color={activeNav === item.id ? "#d9040d" : "currentColor"} />
             {item.label}
             {item.id === "vendors" && pendingVendors > 0 && (
               <span
@@ -85,11 +85,11 @@ export function Sidebar({ activeNav, subNav, setActiveNav, onLogout }) {
           onClick={() => setActiveNav('settings')}
           className={`flex items-center gap-2.5 py-2.5 px-4 rounded-xl cursor-pointer transition-all duration-200 text-[13px] font-medium border mb-0 ${
             activeNav === 'settings' 
-              ? 'bg-[rgba(255,61,61,0.12)] text-white border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]' 
+              ? 'bg-[rgba(217,4,13,0.12)] text-white border-[rgba(217,4,13,0.2)] shadow-[inset_2px_0_0_#d9040d]' 
               : 'text-white/35 border-transparent hover:text-white/70 hover:bg-white/5'
           }`}
         >
-          <Icon name="settings" size={15} color={activeNav === 'settings' ? '#ff3d3d' : 'currentColor'} />Settings
+          <Icon name="settings" size={15} color={activeNav === 'settings' ? '#d9040d' : 'currentColor'} />Settings
         </div>
         <div className="flex items-center gap-2.5 pt-3 mt-2 border-t border-brand-gray-400">
           <div className="w-8 h-8 rounded-lg bg-linear-to-br from-brand-red to-[#ff4400] flex items-center justify-center text-sm">👤</div>

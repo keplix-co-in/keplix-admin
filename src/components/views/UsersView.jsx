@@ -101,7 +101,7 @@ export default function UsersView() {
         {filters.map(f => (
           <button 
             key={f} 
-            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans ${filter === f ? "text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`} 
+            className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans ${filter === f ? "text-white bg-[rgba(217,4,13,0.12)] border-[rgba(217,4,13,0.2)] shadow-[inset_2px_0_0_#d9040d]" : ""}`} 
             onClick={() => setFilter(f)}
           >
             {f}
@@ -116,7 +116,7 @@ export default function UsersView() {
             placeholder="Search users..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-64 bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs text-white placeholder-brand-gray-600 focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-white/10 transition-all font-sans"
+            className="w-full sm:w-64 bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs text-white placeholder-brand-gray-600 focus:outline-none focus:border-[rgba(217,4,13,0.5)] focus:bg-white/10 transition-all font-sans"
           />
         </div>
       </div>
@@ -200,7 +200,7 @@ export default function UsersView() {
                         aria-label={`Delete ${u.name}`}
                         className="py-1.5 px-2 rounded-lg border-none cursor-pointer transition-all duration-150 bg-brand-red/10 text-brand-red border border-brand-red/20 hover:bg-brand-red/20"
                       >
-                        <Icon name="delete" size={13} color="#ff3d3d" />
+                        <Icon name="delete" size={13} color="#d9040d" />
                       </button>
                       )}
                     </TableCell>

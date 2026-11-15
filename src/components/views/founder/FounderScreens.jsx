@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AreaChart, Area, BarChart, Bar, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { getAdminUser } from '../../../services/authApi';
-import { sampleSources, sampleAnswer } from '../../../data/founderSample';
 import { askFounder } from '../../../services/founderApi';
 import shortcuts from '../../../data/founderShortcuts.json';
-import { Card, ModeSwitch, SampleBadge, SourceBody } from './shared';
-import { APP_LABEL, buildNeedsYou, campaignRow, inr, isRunning, pctChange, salesSeries, timeAgo, useLiveSource, useSales } from './logic';
+import { Card, SourceBody } from './shared';
+import { ICONS } from './icons';
+import { SOURCE_INFO, APP_LABEL, buildNeedsYou, campaignRow, inr, isRunning, pctChange, salesSeries, timeAgo, useLiveSource, useSales } from './logic';
 
 /* ---------- small UI pieces ---------- */
 
@@ -18,16 +18,12 @@ const Stat = ({ label, value, sub, tone }) => (
   </div>
 );
 
-const SourceHeader = ({ id, src }) => (
-  <div className="flex items-center gap-2">
-    {src.mode === 'live' && (
-      <button type="button" onClick={src.refresh} disabled={src.loading} className="text-xs text-slate-500 enabled:hover:text-slate-900 disabled:opacity-40">
-        Refresh
-      </button>
-    )}
-    {src.mode === 'sample' && <SampleBadge />}
-    <ModeSwitch id={id} mode={src.mode} setMode={src.setMode} />
-  </div>
+// Every source is live (2026-11-15: Sample mode removed), so the header is
+// just a Refresh button.
+const SourceHeader = ({ src }) => (
+  <button type="button" onClick={src.refresh} disabled={src.loading} className="text-xs text-slate-500 enabled:hover:text-slate-900 disabled:opacity-40">
+    {src.loading ? 'Loading…' : 'Refresh'}
+  </button>
 );
 
 // Outside links arrive https-only (backend safeLink); with no link the text
@@ -56,7 +52,7 @@ export const DaysToggle = ({ days, setDays }) => (
 const DOT = {
   Gmail: ['M', 'bg-red-100 text-red-600'], WhatsApp: ['W', 'bg-emerald-100 text-emerald-700'],
   Instagram: ['I', 'bg-pink-100 text-pink-600'], 'Instagram DM': ['I', 'bg-pink-100 text-pink-600'],
-  'Instagram comment': ['I', 'bg-pink-100 text-pink-600'], Sales: ['₹', 'bg-amber-100 text-amber-700'],
+  'Instagram comment': ['I', 'bg-pink-100 text-pink-600'], Sales: ['₹', 'bg-red-100 text-red-700'],
   Ads: ['A', 'bg-blue-100 text-blue-600'], YouTube: ['Y', 'bg-red-100 text-red-600'],
 };
 export const AppDot = ({ label }) => {
@@ -105,7 +101,7 @@ export function TodayScreen() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card className="lg:col-span-2" title="Sales yesterday" right={<SourceHeader id="sales" src={sales} />}>
+        <Card className="lg:col-span-2" title="Sales yesterday" right={<SourceHeader src={sales} />}>
           <SourceBody src={sales} id="sales">{(d) => (
             <>
               <div className="flex flex-wrap items-end justify-between gap-3">
@@ -122,8 +118,8 @@ export function TodayScreen() {
                   <AreaChart data={series.points} margin={{ left: 0, right: 8, top: 8 }}>
                     <defs>
                       <linearGradient id="founderSalesFill" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#ff3d3d" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#ff3d3d" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#d9040d" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#d9040d" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid stroke="#eef0f4" vertical={false} />
@@ -131,7 +127,7 @@ export function TodayScreen() {
                     <YAxis stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} width={44} tickLine={false} axisLine={false} />
                     <Tooltip formatter={(v, n) => [inr(v), n === 'amount' ? 'This period' : 'Period before']} />
                     {series.hasPrev && <Area type="monotone" dataKey="prev" stroke="#cbd5e1" strokeDasharray="4 4" fill="none" strokeWidth={2} />}
-                    <Area type="monotone" dataKey="amount" stroke="#ff3d3d" fill="url(#founderSalesFill)" strokeWidth={2.5} />
+                    <Area type="monotone" dataKey="amount" stroke="#d9040d" fill="url(#founderSalesFill)" strokeWidth={2.5} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -179,27 +175,29 @@ export function TodayScreen() {
       </div>
 
       <div className="grid gap-5 lg:grid-cols-3">
-        <Card title="AI brief" className="lg:col-span-2" right={<SourceHeader id="ai_brief" src={brief} />}>
+        <Card title="AI brief" className="lg:col-span-2" right={<SourceHeader src={brief} />}>
           <SourceBody src={brief} id="ai_brief">{(d) => (
             <>
               <div className="text-sm text-slate-700 whitespace-pre-line leading-relaxed">{d.text}</div>
               <div className="text-[11px] text-slate-400 mt-3">
-                {d.model === 'sample' ? 'Sample text' : `Written by ${d.model} ${timeAgo(d.generatedAt)}`} · AI can be wrong; check numbers on the pages below.
+                {`Written by ${d.model} ${timeAgo(d.generatedAt)}`} · AI can be wrong; check numbers on the pages below.
               </div>
             </>
           )}</SourceBody>
-          <AskBox mode={brief.mode} />
+          <AskBox />
         </Card>
 
         <Card title="Messages" right={<Link to="/founder/messages" className="text-xs font-semibold text-brand-red hover:underline">Open inbox</Link>}>
           <ul className="space-y-2.5 text-sm">
-            {[['gmail', 'Email'], ['whatsapp', 'WhatsApp'], ['ig_comment', 'Instagram comments']].map(([app, label]) => {
-              const n = app === 'ig_comment' ? (ig.data?.comments?.length || 0) : messages.filter((m) => m.app === app).length;
+            {[['gmail', 'Email'], ['whatsapp', 'WhatsApp'], ['instagram', 'Instagram comments']].map(([app, label]) => {
+              const n = app === 'instagram' ? (ig.data?.comments?.length || 0) : messages.filter((m) => m.app === app).length;
               return (
-                <li key={app} className="flex items-center gap-3">
-                  <AppDot label={APP_LABEL[app]} />
-                  <span className="flex-1 text-slate-700">{label}</span>
-                  <span className="text-xs font-bold text-slate-900 bg-slate-100 rounded-full px-2.5 py-0.5">{n}</span>
+                <li key={app}>
+                  <Link to={`/founder/messages?app=${app}`} className="flex items-center gap-3 hover:bg-slate-50 -mx-2 px-2 py-1 rounded">
+                    {ICONS[app]}
+                    <span className="flex-1 text-slate-700">{label}</span>
+                    <span className="text-xs font-bold text-slate-900 bg-slate-100 rounded-full px-2.5 py-0.5">{n}</span>
+                  </Link>
                 </li>
               );
             })}
@@ -211,21 +209,16 @@ export function TodayScreen() {
 }
 
 /**
- * Ask box (Phase 3). Follows the AI brief's Sample / Live switch: Sample gives
- * a canned reply and never calls the backend. Answers render as plain text
- * (React escapes them), never as HTML.
+ * Ask box (Phase 3). Answers render as plain text (React escapes them), never
+ * as HTML.
  */
-function AskBox({ mode }) {
+function AskBox() {
   const [q, setQ] = useState('');
   const [state, setState] = useState({ busy: false, answer: null, error: null });
   const submit = async (e) => {
     e.preventDefault();
     const question = q.trim();
     if (!question || state.busy) return;
-    if (mode !== 'live') {
-      setState({ busy: false, answer: sampleAnswer, error: null });
-      return;
-    }
     setState({ busy: true, answer: null, error: null });
     try {
       const r = await askFounder(question);
@@ -265,61 +258,158 @@ function EventList({ events, empty }) {
   );
 }
 
-export function MessagesScreen() {
-  const google = useLiveSource('google');
-  const wa = useLiveSource('whatsapp');
-  const [filter, setFilter] = useState('all');
-  // Phase 3: Gmail (Apps Script) and WhatsApp (Twilio) are separate sources,
-  // each with its own switch; the list merges whatever each one has.
-  const list = [...(google.data?.messages || []), ...(wa.data?.messages || [])]
-    .filter((m) => filter === 'all' || m.app === filter)
-    .sort((a, b) => new Date(b.time) - new Date(a.time));
-  const feeds = [['google', 'Gmail', google], ['whatsapp', 'WhatsApp', wa]];
+/* ---------- Messages: one view per app (2026-11-15) ---------- */
 
+const VIEWS = [
+  { key: 'all', label: 'All messages', icon: ICONS.messages },
+  { key: 'gmail', label: 'Email', icon: ICONS.gmail },
+  { key: 'whatsapp', label: 'WhatsApp', icon: ICONS.whatsapp },
+  { key: 'instagram', label: 'Instagram', icon: ICONS.instagram },
+];
+const NOTE = {
+  all: 'Unread Gmail, WhatsApp from the last 3 days and new Instagram comments. Phone numbers are hidden.',
+  gmail: 'Unread mail from your inbox. Open a mail to reply in Gmail.',
+  whatsapp: 'Messages to the Keplix WhatsApp number from the last 3 days (phone numbers hidden). Reply in WhatsApp itself.',
+  instagram: 'New comments on your latest 3 reels. Reply opens the reel on Instagram.',
+};
+const byNewest = (a, b) => new Date(b.time) - new Date(a.time);
+const Empty = ({ children }) => <div className="py-6 text-sm text-slate-500 text-center">{children}</div>;
+const initial = (s) => (s || '?').replace(/^@/, '').charAt(0).toUpperCase();
+
+function EmailView({ src }) {
   return (
-    <Card title="All messages">
-      <div className="grid gap-3 sm:grid-cols-2 mb-4">
-        {feeds.map(([id, label, src]) => (
-          <div key={id} className="border border-slate-200 rounded-lg p-3">
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <span className="text-xs font-semibold text-slate-600">{label}</span>
-              <SourceHeader id={id} src={src} />
+    <SourceBody src={src} id="google">{(d) => ((d.messages || []).length ? (
+      <ul className="divide-y divide-slate-100">
+        {d.messages.slice().sort(byNewest).map((m) => (
+          <li key={m.id} className="py-3 flex items-start gap-3 text-sm">
+            <span className="w-9 h-9 rounded-full bg-blue-50 text-blue-700 font-bold flex items-center justify-center shrink-0">{initial(m.from)}</span>
+            <span className="flex-1 min-w-0">
+              <span className="flex items-baseline gap-2"><span className="font-semibold text-slate-900 truncate">{m.from}</span><span className="ml-auto text-xs text-slate-400 shrink-0">{timeAgo(m.time)}</span></span>
+              <span className="block text-slate-600 truncate">{m.text}</span>
+            </span>
+            {m.link && <a href={m.link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-brand-red hover:underline shrink-0 self-center">Open in Gmail ↗</a>}
+          </li>
+        ))}
+      </ul>
+    ) : <Empty>No unread email.</Empty>)}</SourceBody>
+  );
+}
+
+function WhatsAppView({ src }) {
+  return (
+    <SourceBody src={src} id="whatsapp">{(d) => ((d.messages || []).length ? (
+      <ul className="space-y-3 bg-[#efeae2] rounded-xl p-4">
+        {d.messages.slice().sort(byNewest).map((m) => (
+          <li key={m.id} className="flex items-end gap-2">
+            <span className="w-8 h-8 rounded-full bg-emerald-600 text-white text-xs font-bold flex items-center justify-center shrink-0">{initial(m.from)}</span>
+            <div className="bg-white rounded-xl rounded-bl-sm px-3 py-2 shadow-sm max-w-[80%]">
+              <div className="text-xs font-semibold text-emerald-700">{m.from}</div>
+              <div className="text-sm text-slate-800 whitespace-pre-line break-words">{m.text}</div>
+              <div className="text-[10px] text-slate-400 text-right mt-0.5">{timeAgo(m.time)}</div>
             </div>
-            <SourceBody src={src} id={id}>{() => null}</SourceBody>
-          </div>
+          </li>
         ))}
-      </div>
-      <div className="flex flex-wrap gap-2 mb-4">
-        {['all', 'gmail', 'ig_dm', 'ig_comment', 'whatsapp'].map((f) => (
-          <button key={f} type="button" onClick={() => setFilter(f)} aria-pressed={filter === f}
-            className={`text-xs px-3 py-1.5 rounded-full border ${filter === f ? 'bg-brand-red/10 border-brand-red/40 text-brand-red' : 'border-slate-200 text-slate-500'}`}>
-            {f === 'all' ? 'All' : APP_LABEL[f]}
-          </button>
+      </ul>
+    ) : <Empty>No WhatsApp messages in the last 3 days.</Empty>)}</SourceBody>
+  );
+}
+
+function InstagramView({ src }) {
+  return (
+    <SourceBody src={src} id="instagram">{(d) => ((d.comments || []).length ? (
+      <ul className="divide-y divide-slate-100">
+        {d.comments.slice().sort(byNewest).map((c) => (
+          <li key={c.id} className="py-3 flex items-start gap-3 text-sm">
+            <span className="shrink-0 mt-0.5">{ICONS.instagram}</span>
+            <span className="flex-1 min-w-0">
+              <span className="flex items-baseline gap-2"><span className="font-semibold text-slate-900">{c.from}</span><span className="ml-auto text-xs text-slate-400 shrink-0">{timeAgo(c.time)}</span></span>
+              <span className="block text-slate-700">{c.text}</span>
+              {c.reel && <span className="block text-xs text-slate-400 truncate">on reel: {c.reel}</span>}
+            </span>
+            {c.link && <a href={c.link} target="_blank" rel="noopener noreferrer" className="text-xs font-semibold text-brand-red hover:underline shrink-0 self-center">Reply ↗</a>}
+          </li>
         ))}
-      </div>
+      </ul>
+    ) : <Empty>No new comments on your latest reels.</Empty>)}</SourceBody>
+  );
+}
+
+function AllView({ google, wa, ig }) {
+  const list = [
+    ...(google.data?.messages || []),
+    ...(wa.data?.messages || []),
+    ...(ig.data?.comments || []).map((c) => ({ ...c, app: 'ig_comment' })),
+  ].sort(byNewest);
+  const off = [['google', google], ['whatsapp', wa], ['instagram', ig]].filter(([, src]) => src.notConfigured || src.error);
+  const loading = google.loading || wa.loading || ig.loading;
+  return (
+    <>
+      {off.map(([id, src]) => <div key={id} className="mb-3"><SourceBody src={{ ...src, loading: false, data: null }} id={id}>{() => null}</SourceBody></div>)}
       <ul className="divide-y divide-slate-100">
         {list.map((m) => (
           <li key={`${m.app}_${m.id}`}>
             <MaybeLink href={m.link} className="py-3 flex gap-3 text-sm hover:bg-slate-50 -mx-2 px-2 rounded">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-red/80 w-32 shrink-0 pt-0.5">{APP_LABEL[m.app]}</span>
+              <span className="shrink-0 mt-0.5" title={APP_LABEL[m.app]}>{ICONS[m.app === 'ig_comment' ? 'instagram' : m.app]}</span>
               <span className="flex-1 min-w-0"><span className="text-slate-900 font-medium">{m.from}</span><span className="block text-slate-600 truncate">{m.text}</span></span>
               <span className="text-xs text-slate-400 shrink-0">{timeAgo(m.time)}</span>
             </MaybeLink>
           </li>
         ))}
-        {!list.length && <li className="py-3 text-sm text-slate-500">No messages.</li>}
+        {!list.length && !loading && <li><Empty>No messages.</Empty></li>}
       </ul>
-      {(google.mode === 'live' || wa.mode === 'live') && (
-        <div className="text-xs text-slate-400 mt-3">Live shows unread Gmail and WhatsApp messages from the last 3 days (phone numbers hidden). Reply in WhatsApp itself; Instagram comments are on the Instagram page.</div>
-      )}
-    </Card>
+    </>
+  );
+}
+
+export function MessagesScreen() {
+  const google = useLiveSource('google');
+  const wa = useLiveSource('whatsapp');
+  const ig = useLiveSource('instagram');
+  // ?app=gmail|whatsapp|instagram comes from the sidebar rows. The URL is the
+  // view, so the sidebar and the tabs here stay in sync.
+  const [params, setParams] = useSearchParams();
+  const view = VIEWS.some((v) => v.key === params.get('app')) ? params.get('app') : 'all';
+  const counts = {
+    gmail: google.data?.messages?.length || 0,
+    whatsapp: wa.data?.messages?.length || 0,
+    instagram: ig.data?.comments?.length || 0,
+  };
+  counts.all = counts.gmail + counts.whatsapp + counts.instagram;
+  const current = VIEWS.find((v) => v.key === view);
+  const srcFor = {
+    all: { refresh: () => [google, wa, ig].forEach((x) => x.refresh()), loading: google.loading || wa.loading || ig.loading },
+    gmail: google,
+    whatsapp: wa,
+    instagram: ig,
+  };
+
+  return (
+    <div className="grid gap-4">
+      <div className="flex flex-wrap gap-2" role="tablist" aria-label="Message apps">
+        {VIEWS.map((v) => (
+          <button key={v.key} type="button" role="tab" aria-selected={view === v.key}
+            onClick={() => setParams(v.key === 'all' ? {} : { app: v.key })}
+            className={`flex items-center gap-2 text-sm px-3.5 py-2 rounded-xl border ${view === v.key ? 'bg-white border-slate-300 shadow-sm font-semibold text-slate-900' : 'border-transparent text-slate-500 hover:bg-white'}`}>
+            {v.icon}{v.label}
+            <span className="text-[11px] font-bold bg-slate-100 text-slate-600 rounded-full px-2">{counts[v.key]}</span>
+          </button>
+        ))}
+      </div>
+      <Card title={<span className="flex items-center gap-2">{current.icon}{current.label}</span>} right={<SourceHeader src={srcFor[view]} />}>
+        {view === 'all' && <AllView google={google} wa={wa} ig={ig} />}
+        {view === 'gmail' && <EmailView src={google} />}
+        {view === 'whatsapp' && <WhatsAppView src={wa} />}
+        {view === 'instagram' && <InstagramView src={ig} />}
+        <div className="text-xs text-slate-400 mt-4">{NOTE[view]}</div>
+      </Card>
+    </div>
   );
 }
 
 export function CalendarScreen() {
   const google = useLiveSource('google');
   return (
-    <Card title="Today and the next 7 days" right={<SourceHeader id="google" src={google} />}>
+    <Card title="Today and the next 7 days" right={<SourceHeader src={google} />}>
       <SourceBody src={google} id="google">{(d) => (
         <EventList events={d.calendar.slice().sort((a, b) => new Date(a.start) - new Date(b.start))} empty="Nothing scheduled." />
       )}</SourceBody>
@@ -365,12 +455,12 @@ export function AdsScreen() {
   return (
     <div className="grid gap-5">
       <div className="flex justify-end"><DaysToggle days={days} setDays={setDays} /></div>
-      <Card title="Meta campaigns" right={<SourceHeader id="meta_ads" src={ads} />}>
+      <Card title="Meta campaigns" right={<SourceHeader src={ads} />}>
         <SourceBody src={ads} id="meta_ads">{(d) => (
           <CampaignTable campaigns={d.campaigns} days={days} empty="No campaigns ran in the last 30 days." />
         )}</SourceBody>
       </Card>
-      <Card title="Google Ads campaigns" right={<SourceHeader id="google" src={google} />}>
+      <Card title="Google Ads campaigns" right={<SourceHeader src={google} />}>
         <SourceBody src={google} id="google">{(d) => (d.googleAds ? (
           <>
             <CampaignTable campaigns={d.googleAds.campaigns} days={days} empty="No Google Ads campaigns ran in the last 30 days." />
@@ -387,7 +477,7 @@ export function SalesScreen() {
   const s = sales.data;
   return (
     <div className="grid gap-5">
-      <Card title="Payments" right={<SourceHeader id="sales" src={sales} />}>
+      <Card title="Payments" right={<SourceHeader src={sales} />}>
         <SourceBody src={sales} id="sales">{(d) => (
           <>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
@@ -397,11 +487,11 @@ export function SalesScreen() {
             </div>
             <div className="h-56" aria-label="14-day sales chart">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={d.chart}>
+                <BarChart data={(d.chart || []).slice(-14)}>
                   <XAxis dataKey="date" tickFormatter={(x) => x.slice(8)} stroke="#666" fontSize={11} />
                   <YAxis stroke="#666" fontSize={11} tickFormatter={(v) => `₹${Math.round(v / 1000)}k`} width={48} />
                   <Tooltip formatter={(v) => inr(v)} contentStyle={{ background: '#0e0e18', border: '1px solid #333' }} />
-                  <Bar dataKey="amount" fill="#ff3d3d" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount" fill="#d9040d" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -436,7 +526,7 @@ export function InstagramScreen() {
   const ig = useLiveSource('instagram');
   return (
     <div className="grid gap-5">
-      <Card title="Last 10 reels" right={<SourceHeader id="instagram" src={ig} />}>
+      <Card title="Last 10 reels" right={<SourceHeader src={ig} />}>
         <SourceBody src={ig} id="instagram">{(d) => (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -477,7 +567,7 @@ export function InstagramScreen() {
 export function YouTubeScreen() {
   const google = useLiveSource('google');
   return (
-    <Card title="YouTube" right={<SourceHeader id="google" src={google} />}>
+    <Card title="YouTube" right={<SourceHeader src={google} />}>
       <SourceBody src={google} id="google">{(d) => (d.youtube ? (
         <>
           <div className="flex gap-8 mb-5">
@@ -549,10 +639,9 @@ const ABOUT = {
 
 function SourceCard({ info }) {
   const src = useLiveSource(info.id);
-  const live = src.mode === 'live';
-  const state = !live ? 'Sample' : src.loading ? 'Checking…' : src.notConfigured ? 'Off' : src.error ? 'Error' : 'Connected';
-  const pill = state === 'Connected' ? 'bg-emerald-100 text-emerald-700' : state === 'Error' ? 'bg-red-100 text-brand-red' : state === 'Sample' ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-500';
-  const synced = live && (src.data?.fetchedAt || src.data?.generatedAt);
+  const state = src.loading ? 'Checking…' : src.notConfigured ? 'Off' : src.error ? 'Error' : 'Connected';
+  const pill = state === 'Connected' ? 'bg-emerald-100 text-emerald-700' : state === 'Error' ? 'bg-red-100 text-brand-red' : 'bg-slate-100 text-slate-500';
+  const synced = (src.data?.fetchedAt || src.data?.generatedAt);
   const open = OPEN_URL[info.id];
   const external = open && open.startsWith('http');
   return (
@@ -563,11 +652,10 @@ function SourceCard({ info }) {
         <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${pill}`}>{state}</span>
       </div>
       <p className="text-xs text-slate-500 flex-1">{ABOUT[info.id]}</p>
-      {live && src.notConfigured && SETUP[info.id] && <p className="text-xs text-slate-500">Add on server: {SETUP[info.id]}</p>}
-      {live && src.error && <p role="alert" className="text-xs text-brand-red">{src.error}</p>}
+      {src.notConfigured && SETUP[info.id] && <p className="text-xs text-slate-500">Add on server: {SETUP[info.id]}</p>}
+      {src.error && <p role="alert" className="text-xs text-brand-red">{src.error}</p>}
       <div className="flex flex-wrap items-center gap-2">
-        <ModeSwitch id={info.id} mode={src.mode} setMode={src.setMode} />
-        <button type="button" disabled={!live || src.loading} onClick={src.refresh}
+        <button type="button" disabled={src.loading} onClick={src.refresh}
           className="text-xs px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 enabled:hover:text-slate-900 disabled:opacity-40">
           {synced ? `Sync · ${timeAgo(synced)}` : 'Sync now'}
         </button>
@@ -583,7 +671,7 @@ export function ConnectedAppsScreen() {
   return (
     <div className="grid gap-4">
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {sampleSources.map((info) => <SourceCard key={info.id} info={info} />)}
+        {SOURCE_INFO.map((info) => <SourceCard key={info.id} info={info} />)}
       </div>
       <div className="text-xs text-slate-400">Read-only: the dashboard never changes ads, posts, mail or payments.</div>
     </div>

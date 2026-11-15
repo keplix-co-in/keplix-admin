@@ -15,15 +15,17 @@ const TITLES = Object.fromEntries([
  * Admin <-> Founder switch (2026-11-14). Shown to super_admin only; the
  * /founder route is also gated in App.jsx, so hiding this is not the only guard.
  */
-export function PanelToggle({ activeNav, setActiveNav }) {
+export function PanelToggle({ activeNav, setActiveNav, light = false }) {
+  // light: the Founder header is white, so the idle half needs dark text (2026-11-14).
+  const idle = light ? "text-slate-500 hover:text-slate-900" : "text-white/50 hover:text-white";
   if (!isSuperAdmin()) return null;
   const founder = activeNav === "founder";
   return (
-    <div className="flex text-xs font-semibold rounded-lg overflow-hidden border border-brand-gray-400" role="group" aria-label="Switch panel">
+    <div className={`flex text-xs font-semibold rounded-lg overflow-hidden border ${light ? "border-slate-300" : "border-brand-gray-400"}`} role="group" aria-label="Switch panel">
       <button type="button" aria-pressed={!founder} onClick={() => founder && setActiveNav("dashboard")}
-        className={`px-3 py-1.5 ${!founder ? "bg-brand-red text-white" : "text-white/50 hover:text-white"}`}>Admin</button>
+        className={`px-3 py-1.5 ${!founder ? "bg-brand-red text-white" : idle}`}>Admin</button>
       <button type="button" aria-pressed={founder} onClick={() => !founder && setActiveNav("founder/today")}
-        className={`px-3 py-1.5 ${founder ? "bg-brand-red text-white" : "text-white/50 hover:text-white"}`}>Founder</button>
+        className={`px-3 py-1.5 ${founder ? "bg-brand-red text-white" : idle}`}>Founder</button>
     </div>
   );
 }

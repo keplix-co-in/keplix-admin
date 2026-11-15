@@ -2,7 +2,7 @@ const STEPS = [
   { label: "User Pays",      sublabel: "Full booking amount", icon: "👤", color: "#2196F3", amount: "₹1,000" },
   { label: "Keplix Escrow",  sublabel: "Held by payment GW",  icon: "🏦", color: "#9C27B0", amount: "₹1,000" },
   { label: "Service Done",   sublabel: "Vendor completes job", icon: "✅", color: "#4CAF50", amount: "" },
-  { label: "Commission Cut", sublabel: "10% platform fee",     icon: "💎", color: "#ff3d3d", amount: "₹100" },
+  { label: "Commission Cut", sublabel: "10% platform fee",     icon: "💎", color: "#d9040d", amount: "₹100" },
   { label: "Vendor Payout",  sublabel: "Within 72 hours",      icon: "🏪", color: "#ff9944", amount: "₹900" },
 ];
 

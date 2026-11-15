@@ -70,7 +70,7 @@ export default function VendorsView({ filter, setFilter }) {
     <div className="animate-[fadeInUp_0.3s_ease_forwards]">
       <div className="flex gap-2 mb-5 flex-wrap items-center">
         {filters.map(f => (
-          <button key={f} className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === f ? " text-white bg-[rgba(255,61,61,0.12)] border-[rgba(255,61,61,0.2)] shadow-[inset_2px_0_0_#ff3d3d]" : ""}`} onClick={() => setFilter(f)}>{f}</button>
+          <button key={f} className={`py-1.5 px-3.5 rounded-full text-xs font-semibold cursor-pointer border border-white/10 bg-transparent text-[rgba(255,255,255,0.35)] transition-all duration-150 font-sans${filter === f ? " text-white bg-[rgba(217,4,13,0.12)] border-[rgba(217,4,13,0.2)] shadow-[inset_2px_0_0_#d9040d]" : ""}`} onClick={() => setFilter(f)}>{f}</button>
         ))}
         <div className="ml-auto relative w-full sm:w-auto mt-3 sm:mt-0">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-brand-gray-600">
@@ -81,7 +81,7 @@ export default function VendorsView({ filter, setFilter }) {
             placeholder="Search vendors..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full sm:w-64 bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs text-white placeholder-brand-gray-600 focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-white/10 transition-all font-sans"
+            className="w-full sm:w-64 bg-white/5 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs text-white placeholder-brand-gray-600 focus:outline-none focus:border-[rgba(217,4,13,0.5)] focus:bg-white/10 transition-all font-sans"
           />
         </div>
       </div>

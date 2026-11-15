@@ -12,10 +12,10 @@ export default function FinanceKpis({ kpis, error, onRetry }) {
   const financeKpis = [
     { label: "Total Collected (Escrow)", value: formatInr(kpis?.totalCollected), icon: "🏦", color: "#2196F3" },
     { label: "Disbursed to Vendors",     value: formatInr(kpis?.disbursed), icon: "📤", color: "#4CAF50" },
-    { label: "Platform Commission",      value: formatInr(kpis?.commission), icon: "💎", color: "#ff3d3d" },
-    { label: "Pending Disbursement",     value: formatInr(kpis?.pendingDisbursement), icon: "⏳", color: "#ff3d3d", alert: true },
+    { label: "Platform Commission",      value: formatInr(kpis?.commission), icon: "💎", color: "#d9040d" },
+    { label: "Pending Disbursement",     value: formatInr(kpis?.pendingDisbursement), icon: "⏳", color: "#d9040d", alert: true },
     { label: "Refunds Issued",           value: formatInr(kpis?.refunds), icon: "↩️", color: "#9C27B0" },
-    { label: "Failed Payouts",           value: formatInr(kpis?.failed), icon: "❌", color: "#ff3d3d", alert: true },
+    { label: "Failed Payouts",           value: formatInr(kpis?.failed), icon: "❌", color: "#d9040d", alert: true },
   ];
 
   if (error) {
@@ -29,7 +29,7 @@ export default function FinanceKpis({ kpis, error, onRetry }) {
   return (
     <div className="grid grid-cols-6 gap-3.5 mb-6">
       {financeKpis.map((k, i) => (
-        <div key={i} className={`bg-brand-gray-100] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(255,61,61,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(255,61,61,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
+        <div key={i} className={`bg-brand-gray-100] rounded-[18px] p-5 border border-white/5 relative overflow-hidden transition-all duration-150 hover:-translate-y-0.5 hover:border-[rgba(217,4,13,0.15)] before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-[rgba(217,4,13,0.3)] before:to-transparent ${k.alert ? 'border-brand-red/25' : ''}`}>
           <div className="text-xl mb-2.5">{k.icon}</div>
           <div className="font-syne text-lg font-extrabold text-white mb-1">{k.value}</div>
           <div className="text-xs text-brand-gray-700">{k.label}</div>

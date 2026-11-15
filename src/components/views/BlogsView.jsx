@@ -106,7 +106,7 @@ export default function BlogsView() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search posts..."
-            className="bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(255,61,61,0.5)]"
+            className="bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-2.5 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(217,4,13,0.5)]"
           />
           <Button onClick={openNew}>+ New post</Button>
         </div>

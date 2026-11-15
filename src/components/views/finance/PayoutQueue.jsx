@@ -12,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { formatINR } from "../../../utils/format.js";
 
 const urgencyConfig = {
-  critical: { color: "#ff3d3d", bg: "rgba(255,61,61,0.08)",  label: "CRITICAL" },
+  critical: { color: "#d9040d", bg: "rgba(217,4,13,0.08)",  label: "CRITICAL" },
   urgent:   { color: "#ff6b00", bg: "rgba(255,107,0,0.08)", label: "URGENT" },
   due_soon: { color: "#ff9944", bg: "rgba(255,153,68,0.08)", label: "DUE SOON" },
   normal:   { color: "#4CAF50", bg: "rgba(76,175,80,0.06)",  label: "NORMAL" },
@@ -215,7 +215,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
                       {/* Failed payouts are listed since 2026-11-03 so they can be
                           retried; before, they were only a number in the KPIs. */}
                       {p.payoutStatus === 'failed' && (
-                        <span className="ml-2 text-[10px] font-bold text-[#ff3d3d]">LAST PAYOUT FAILED</span>
+                        <span className="ml-2 text-[10px] font-bold text-[#d9040d]">LAST PAYOUT FAILED</span>
                       )}
                     </TableCell>
                     <TableCell className="text-xs text-brand-gray-800">{p.booking}</TableCell>

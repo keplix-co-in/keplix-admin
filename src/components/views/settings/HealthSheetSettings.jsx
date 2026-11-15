@@ -74,7 +74,7 @@ export default function HealthSheetSettings() {
         </p>
       </div>
 
-      <div className="rounded-xl border border-[rgba(255,61,61,0.25)] bg-[rgba(255,61,61,0.06)] p-4">
+      <div className="rounded-xl border border-[rgba(217,4,13,0.25)] bg-[rgba(217,4,13,0.06)] p-4">
         <p className="text-xs text-brand-red font-semibold mb-1">Before you enable this</p>
         <p className="text-xs text-white/70 leading-relaxed">
           Completion sits on the escrow-release path. Turning this on with no

@@ -1,40 +1,25 @@
 import { useEffect, useState } from 'react';
-import { sampleSales, sampleSources, sampleAdsSource, sampleInstagramSource, sampleGoogleSource, sampleWhatsAppSource, sampleBrief } from '../../../data/founderSample';
 import { getFounderSales, getFounderAds, getFounderInstagram, getFounderGoogle, getFounderWhatsApp, getFounderBrief } from '../../../services/founderApi';
 
 /**
  * Founder dashboard hooks and pure helpers (2026-11-14). Kept in a plain .js
  * file so the .jsx files export only components (react-refresh lint rule).
  *
- * Each data source has its own Sample / Live switch. The choice is a per-viewer
- * convenience, so it lives in localStorage (wrapped in try/catch: private
- * windows can throw) and defaults to Sample.
+ * 2026-11-15: Sample mode removed at the owner's request ("I want the original
+ * one"). Every source always loads real data; a source without keys shows
+ * "Not connected" with setup steps instead of made-up numbers.
  */
 
-const KEY = (id) => `founderMode:${id}`;
+export const SOURCE_INFO = [
+  { id: 'sales', name: 'Sales (Keplix database)' },
+  { id: 'meta_ads', name: 'Meta Ads' },
+  { id: 'instagram', name: 'Instagram' },
+  { id: 'google', name: 'Google (Gmail, Calendar, YouTube, Google Ads)' },
+  { id: 'whatsapp', name: 'WhatsApp (Twilio)' },
+  { id: 'ai_brief', name: 'AI brief + Ask (Gemini)' },
+];
 
-const read = (id) => {
-  try {
-    return localStorage.getItem(KEY(id)) === 'live' ? 'live' : 'sample';
-  } catch {
-    return 'sample';
-  }
-};
-
-export function useSourceMode(id) {
-  const [mode, setModeState] = useState(() => read(id));
-  const setMode = (m) => {
-    setModeState(m);
-    try {
-      localStorage.setItem(KEY(id), m);
-    } catch {
-      /* storage blocked: the switch still works for this visit */
-    }
-  };
-  return [mode, setMode];
-}
-
-export const sourceInfo = (id) => sampleSources.find((s) => s.id === id);
+export const sourceInfo = (id) => SOURCE_INFO.find((s) => s.id === id);
 
 export const inr = (n) =>
   `₹${Number(n || 0).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
@@ -50,61 +35,46 @@ export const timeAgo = (iso) => {
 
 /* ---------- data hooks ---------- */
 
-// Each live source: its sample data and the call that loads it for real.
-// Phase 2 (2026-11-14) added ads, instagram and google; Phase 3 whatsapp + ai_brief.
 const SOURCES = {
-  sales: { sample: sampleSales, load: () => getFounderSales() },
-  meta_ads: { sample: sampleAdsSource, load: getFounderAds },
-  instagram: { sample: sampleInstagramSource, load: getFounderInstagram },
-  google: { sample: sampleGoogleSource, load: getFounderGoogle },
-  whatsapp: { sample: sampleWhatsAppSource, load: getFounderWhatsApp },
-  ai_brief: { sample: sampleBrief, load: getFounderBrief },
+  sales: () => getFounderSales(),
+  meta_ads: getFounderAds,
+  instagram: getFounderInstagram,
+  google: getFounderGoogle,
+  whatsapp: getFounderWhatsApp,
+  ai_brief: getFounderBrief,
 };
 
 /**
- * One source with its Sample / Live switch. Live loads from the backend.
- * `req` counts requests; a request is still loading until `doneFor` catches
- * up. Deriving loading this way avoids a setState at the top of the effect.
- * `force` marks a request made by Refresh / Sync now, which asks the backend
- * to skip its 5-minute cache.
+ * One live source, loaded from the backend. `req` counts requests; a request
+ * is still loading until `doneFor` catches up (avoids a setState at the top of
+ * the effect). `force` marks Refresh, which skips the backend's 5-minute cache.
  */
 export function useLiveSource(id) {
-  const { sample, load } = SOURCES[id];
-  const [mode, setStoredMode] = useSourceMode(id);
+  const load = SOURCES[id];
   const [req, setReq] = useState({ n: 0, force: false });
   const [live, setLive] = useState({ data: null, error: null, code: null, doneFor: -1 });
 
   useEffect(() => {
-    if (mode !== 'live') return undefined;
     let cancelled = false;
     load(req.force)
       .then((data) => !cancelled && setLive({ data, error: null, code: null, doneFor: req.n }))
       // Keep the last good data on a failed refresh; show the error beside it.
       .catch((e) => !cancelled && setLive((s) => ({ ...s, error: e.message, code: e.code || null, doneFor: req.n })));
     return () => { cancelled = true; };
-  }, [mode, req, load]);
+  }, [req, load]);
 
-  const isLive = mode === 'live';
-  const loading = isLive && live.doneFor !== req.n;
-  const settled = isLive && !loading;
-  const notConfigured = settled && live.code === 'NOT_CONFIGURED';
-  const setMode = (m) => {
-    if (m === 'live') setReq((r) => ({ n: r.n + 1, force: false }));
-    setStoredMode(m);
-  };
+  const loading = live.doneFor !== req.n;
+  const notConfigured = !loading && live.code === 'NOT_CONFIGURED';
   return {
-    mode,
-    setMode,
-    // Data from before the keys were removed is not shown as current.
-    data: isLive ? (notConfigured ? null : live.data) : sample,
+    data: notConfigured ? null : live.data,
     loading,
     notConfigured,
-    error: settled && !notConfigured ? live.error : null,
+    error: !loading && !notConfigured ? live.error : null,
     refresh: () => setReq((r) => ({ n: r.n + 1, force: true })),
   };
 }
 
-/** Sales: Sample data, or Live from GET /admin/founder/sales (our own DB). */
+/** Sales, live from GET /admin/founder/sales (our own DB). */
 export const useSales = () => useLiveSource('sales');
 
 /* ---------- pure helpers (unit-tested) ---------- */

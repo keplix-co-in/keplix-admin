@@ -3,7 +3,7 @@ import RichTextEditor from '../ui/RichTextEditor.jsx';
 import { createBlogPost, updateBlogPost } from '../../services/blogsApi.js';
 
 const inputClass =
-  'w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(255,61,61,0.5)] transition-all';
+  'w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 px-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[rgba(217,4,13,0.5)] transition-all';
 const labelClass = 'block text-xs font-semibold text-white/60 mb-2 ml-1';
 
 const EMPTY = {

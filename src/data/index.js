@@ -44,6 +44,6 @@ export const serviceData = [
   { name: "Full Service", value: 34, color: "#ff6b00" },
   { name: "Car Wash",     value: 28, color: "#ff9944" },
   { name: "Repairs",      value: 22, color: "#ffcc77" },
-  { name: "SOS",          value: 10, color: "#ff3d3d" },
+  { name: "SOS",          value: 10, color: "#d9040d" },
   { name: "Others",       value: 6,  color: "#444455" },
 ];

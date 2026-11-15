@@ -14,38 +14,13 @@ export const Card = ({ title, right, children, className = '' }) => (
   </div>
 );
 
-export function ModeSwitch({ id, mode, setMode }) {
-  return (
-    <div className="flex text-[11px] font-semibold rounded-lg overflow-hidden border border-slate-200" role="group" aria-label={`${id} data mode`}>
-      {['sample', 'live'].map((m) => (
-        <button
-          key={m}
-          type="button"
-          onClick={() => setMode(m)}
-          aria-pressed={mode === m}
-          className={`px-2.5 py-1 capitalize ${mode === m ? 'bg-brand-red text-white' : 'text-slate-500 hover:text-slate-900'}`}
-        >
-          {m}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-/**
- * Shown in Live mode when a source can't show real data yet: either its keys
- * aren't set on the backend (Phase 2 sources answer NOT_CONFIGURED), or it is
- * built in a later phase.
- */
+/** Shown when a source's keys aren't set on the backend yet. */
 export function NotConnected({ id }) {
   const s = sourceInfo(id);
   return (
     <div className="text-sm text-slate-600 border border-dashed border-slate-200 rounded-lg p-4">
       <div className="font-semibold text-slate-900 mb-1">Not connected</div>
-      {s?.liveAvailable
-        ? <>{s.name} keys aren&apos;t set up on the server yet. See <b>Connected apps</b> for what to add.</>
-        : <>{s?.name || id} is added in Phase {s?.phase ?? '?'} of the Founder dashboard build.</>}
-      {' '}Switch back to <b>Sample</b> to see how this screen will look.
+      {s?.name || id} keys aren&apos;t set up on the server yet. See <b>Connected apps</b> for the steps.
     </div>
   );
 }
@@ -68,9 +43,3 @@ export function SourceBody({ src, id, children }) {
     </>
   );
 }
-
-export const SampleBadge = () => (
-  <span className="text-[10px] font-bold tracking-wider uppercase text-amber-700 bg-amber-100 px-2 py-0.5 rounded">
-    Sample data
-  </span>
-);

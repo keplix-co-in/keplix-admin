@@ -90,7 +90,7 @@ export default function AnalyticsView() {
           {cityData.map((c, i) => (
             <div key={i} className="grid grid-cols-[1fr_120px_140px_100px_80px] gap-3 px-6 py-3.5 border-b border-brand-gray-400/30 items-center">
               <div className="flex items-center gap-2.5">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-base" style={{background: `rgba(255,61,61,${0.15 - i * 0.02})`}}>
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-base" style={{background: `rgba(217,4,13,${0.15 - i * 0.02})`}}>
                   {["🏙️","🌆","🌇","🏘️","🌃","🌉"][i]}
                 </div>
                 <span className="text-sm font-semibold text-white">{c.city}</span>

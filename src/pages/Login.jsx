@@ -38,10 +38,10 @@ export default function Login({ onLogin }) {
       <div className="w-full max-w-md bg-[rgba(255,255,255,0.02)] border border-white/5 p-8 rounded-3xl shadow-[0_20px_40px_rgba(0,0,0,0.5)] backdrop-blur-md relative z-10 animate-[fadeInUp_0.4s_ease_forwards]">
         
         <div className="flex flex-col items-center mb-8">
-          <div className="w-16 h-16 bg-[rgba(255,61,61,0.08)] border border-[rgba(255,61,61,0.15)] rounded-2xl flex items-center justify-center mb-4 shadow-[inset_0_2px_10px_rgba(255,61,61,0.1)]">
+          <div className="w-16 h-16 bg-[rgba(217,4,13,0.08)] border border-[rgba(217,4,13,0.15)] rounded-2xl flex items-center justify-center mb-4 shadow-[inset_0_2px_10px_rgba(217,4,13,0.1)]">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 22H22L12 2Z" fill="#ff3d3d" fillOpacity="0.8" />
-              <path d="M12 2L12 22H22L12 2Z" fill="#ff3d3d" />
+              <path d="M12 2L2 22H22L12 2Z" fill="#d9040d" fillOpacity="0.8" />
+              <path d="M12 2L12 22H22L12 2Z" fill="#d9040d" />
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-white mb-2 font-syne tracking-wide">Keplix Admin</h1>
@@ -49,7 +49,7 @@ export default function Login({ onLogin }) {
         </div>
 
         {error && (
-          <div className="bg-[rgba(255,61,61,0.1)] border border-[rgba(255,61,61,0.2)] text-brand-red text-sm px-4 py-3 rounded-xl mb-6 flex items-center gap-3 animate-[fadeIn_0.3s_ease]">
+          <div className="bg-[rgba(217,4,13,0.1)] border border-[rgba(217,4,13,0.2)] text-brand-red text-sm px-4 py-3 rounded-xl mb-6 flex items-center gap-3 animate-[fadeIn_0.3s_ease]">
             <Icon name="error" size={16} />
             {error}
           </div>
@@ -67,7 +67,7 @@ export default function Login({ onLogin }) {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@keplix.com"
-                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-brand-gray-400 transition-all"
+                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(217,4,13,0.5)] focus:bg-brand-gray-400 transition-all"
                 required
               />
             </div>
@@ -86,7 +86,7 @@ export default function Login({ onLogin }) {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(255,61,61,0.5)] focus:bg-brand-gray-400 transition-all tracking-[4px]"
+                className="w-full bg-[rgba(255,255,255,0.03)] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white focus:outline-none focus:border-[rgba(217,4,13,0.5)] focus:bg-brand-gray-400 transition-all tracking-[4px]"
                 required
               />
             </div>
@@ -95,7 +95,7 @@ export default function Login({ onLogin }) {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-brand-red hover:bg-[#ff5252] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 px-4 rounded-xl transition-all duration-200 mt-4 shadow-[0_4px_15px_rgba(255,61,61,0.3)] hover:shadow-[0_6px_20px_rgba(255,61,61,0.4)] flex items-center justify-center gap-2"
+            className="w-full bg-brand-red hover:bg-[#ff5252] disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm py-3.5 px-4 rounded-xl transition-all duration-200 mt-4 shadow-[0_4px_15px_rgba(217,4,13,0.3)] hover:shadow-[0_6px_20px_rgba(217,4,13,0.4)] flex items-center justify-center gap-2"
           >
             {loading ? (
               <>

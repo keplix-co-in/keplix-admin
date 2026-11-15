@@ -165,7 +165,7 @@ export default function RefundModal({
         />
 
         {refundResult && (
-          <div className={`mb-4 rounded-lg px-3 py-2 text-xs ${refundResult.ok ? 'bg-[rgba(76,175,80,0.1)] text-[#4CAF50]' : 'bg-[rgba(255,61,61,0.1)] text-[#ff6b6b]'}`}>
+          <div className={`mb-4 rounded-lg px-3 py-2 text-xs ${refundResult.ok ? 'bg-[rgba(76,175,80,0.1)] text-[#4CAF50]' : 'bg-[rgba(217,4,13,0.1)] text-[#ff6b6b]'}`}>
             <div>{refundResult.message}</div>
             {refundResult.payoutAlreadySettled && (
               <div className="mt-1 text-[#ff9944]">

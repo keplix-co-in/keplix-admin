@@ -28,7 +28,7 @@ const GROUP_STYLE = {
   needs_refund: { label: "NEEDS REFUND", color: "#ff9944", bg: "rgba(255,153,68,0.1)" },
   processing: { label: "PROCESSING", color: "#4da3ff", bg: "rgba(77,163,255,0.1)" },
   refunded: { label: "REFUNDED", color: "#4CAF50", bg: "rgba(76,175,80,0.1)" },
-  failed: { label: "FAILED", color: "#ff3d3d", bg: "rgba(255,61,61,0.1)" },
+  failed: { label: "FAILED", color: "#d9040d", bg: "rgba(217,4,13,0.1)" },
 };
 
 // Only these can be refunded from the list; the others are done or under way.

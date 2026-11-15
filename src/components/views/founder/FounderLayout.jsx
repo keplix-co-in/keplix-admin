@@ -1,8 +1,10 @@
 import { useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { FOUNDER_SCREENS } from './registry';
+import keplixLogo from '../../../assets/keplix-logo.png';
 import { PanelToggle } from '../../layout/Topbar';
 import { getAdminUser } from '../../../services/authApi';
+import { ICONS } from './icons';
 import { searchFounder, timeAgo, useLiveSource } from './logic';
 
 /**
@@ -18,11 +20,27 @@ export default function FounderLayout({ subNav, setActiveNav, onLogout, children
   const ig = useLiveSource('instagram');
   const [q, setQ] = useState('');
   const user = getAdminUser();
+  const navigate = useNavigate();
+  const appFilter = new URLSearchParams(useLocation().search).get('app');
 
+  const gmail = google.data?.messages?.length || 0;
+  const whats = wa.data?.messages?.length || 0;
+  const igc = ig.data?.comments?.length || 0;
   const counts = {
-    messages: (google.data?.messages?.length || 0) + (wa.data?.messages?.length || 0),
-    calendar: (google.data?.calendar || []).filter((e) => new Date(e.start).toDateString() === new Date().toDateString()).length,
+    today: (google.data?.calendar || []).filter((e) => new Date(e.start).toDateString() === new Date().toDateString()).length,
+    messages: gmail + whats + igc,
   };
+  // 2026-11-15: Messages opens into per-app rows, like the reference layout.
+  const MESSAGE_ROWS = [
+    { key: 'all', label: 'All messages', icon: ICONS.messages, n: gmail + whats + igc, to: '/founder/messages', on: subNav === 'messages' && !appFilter },
+    { key: 'gmail', label: 'Email', icon: ICONS.gmail, n: gmail, to: '/founder/messages?app=gmail', on: subNav === 'messages' && appFilter === 'gmail' },
+    { key: 'whatsapp', label: 'WhatsApp', icon: ICONS.whatsapp, n: whats, to: '/founder/messages?app=whatsapp', on: subNav === 'messages' && appFilter === 'whatsapp' },
+    { key: 'instagram', label: 'Instagram', icon: ICONS.instagram, n: igc, to: '/founder/messages?app=instagram', on: subNav === 'messages' && appFilter === 'instagram' },
+  ];
+  const row = (on) => `w-full flex items-center gap-3 py-2 px-2.5 rounded-lg text-[15px] ${on ? 'bg-slate-100 text-slate-900 font-semibold' : 'text-slate-700 hover:bg-slate-50'}`;
+  const badge = (n, solid) => n > 0 && (
+    <span className={`text-[11px] font-bold rounded-full min-w-[22px] h-[22px] px-1.5 flex items-center justify-center ${solid ? 'bg-brand-red text-white' : 'bg-slate-100 text-slate-600'}`}>{n}</span>
+  );
   const results = useMemo(() => searchFounder(q, {
     messages: [...(google.data?.messages || []), ...(wa.data?.messages || [])],
     campaigns: [...(ads.data?.campaigns || []), ...(google.data?.googleAds?.campaigns || [])],
@@ -40,24 +58,28 @@ export default function FounderLayout({ subNav, setActiveNav, onLogout, children
   });
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden text-slate-800">
+    <div className="flex h-screen bg-slate-50 font-inter overflow-hidden text-slate-800">
       <aside className="w-60 bg-white border-r border-slate-200 flex flex-col p-5 shrink-0">
-        <div className="flex items-center gap-2.5 px-2 pb-6">
-          <div className="w-9 h-9 rounded-xl bg-brand-red flex items-center justify-center text-white font-syne font-extrabold">K</div>
-          <div>
-            <div className="font-syne font-extrabold text-base text-slate-900 leading-none">KEPLIX</div>
-            <div className="text-[11px] text-brand-red font-semibold tracking-[1.5px]">FOUNDER</div>
-          </div>
+        {/* Keplix's own mark (never the reference site's logo). */}
+        <div className="flex items-center gap-2.5 px-1 pb-6">
+          <img src={keplixLogo} alt="Keplix" className="w-10 h-10 rounded-xl object-contain bg-white" />
+          <div className="font-bold text-[17px] text-slate-900 leading-[1.1]">Keplix<br />Founder</div>
         </div>
         <nav className="flex-1 overflow-y-auto" aria-label="Founder">
           {groups.map((g) => (
             <div key={g.name} className="mb-4">
-              <div className="text-[10px] text-slate-400 tracking-[1.5px] font-bold px-2 pb-1.5 uppercase">{g.name}</div>
-              {g.items.map(([id, s]) => (
-                <button key={id} type="button" onClick={() => setActiveNav(`founder/${id}`)} aria-current={subNav === id ? 'page' : undefined}
-                  className={`w-full flex items-center gap-2 py-2 px-2 rounded-lg text-sm font-medium ${subNav === id ? 'bg-brand-red/10 text-brand-red' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}`}>
+              <div className="text-[13px] text-slate-500 px-2 pb-1.5">{g.name}</div>
+              {g.name === 'Messages' ? MESSAGE_ROWS.map((r) => (
+                <button key={r.key} type="button" onClick={() => navigate(r.to)} aria-current={r.on ? 'page' : undefined} className={row(r.on)}>
+                  <span className="text-slate-600">{r.icon}</span>
+                  <span className="flex-1 text-left">{r.label}</span>
+                  {badge(r.n)}
+                </button>
+              )) : g.items.map(([id, s]) => (
+                <button key={id} type="button" onClick={() => setActiveNav(`founder/${id}`)} aria-current={subNav === id ? 'page' : undefined} className={row(subNav === id)}>
+                  <span className="text-slate-600">{ICONS[id]}</span>
                   <span className="flex-1 text-left">{s.label}</span>
-                  {counts[id] > 0 && <span className="text-[11px] font-bold bg-slate-100 text-slate-600 rounded-full px-2">{counts[id]}</span>}
+                  {badge(counts[id], id === 'today')}
                 </button>
               ))}
             </div>
@@ -87,8 +109,8 @@ export default function FounderLayout({ subNav, setActiveNav, onLogout, children
               </div>
             )}
           </div>
-          <span className="hidden md:inline text-xs text-slate-400">{synced ? `Synced ${timeAgo(synced)}` : 'Sample data'}</span>
-          <PanelToggle activeNav="founder" setActiveNav={setActiveNav} />
+          <span className="hidden md:inline text-xs text-slate-400">{synced ? `Synced ${timeAgo(synced)}` : 'Not synced yet'}</span>
+          <PanelToggle activeNav="founder" setActiveNav={setActiveNav} light />
         </header>
         <main className="flex-1 overflow-y-auto p-6">{children}</main>
       </div>
