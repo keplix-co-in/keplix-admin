@@ -5,6 +5,7 @@ const navItems = [
     { id: "bookings",  label: "Bookings",   icon: "bookings"  },
     { id: "walkins",   label: "Walk-In Jobs", icon: "bookings" },
     { id: "health-components", label: "Health Sheet Setup", icon: "check" },
+    { id: "subscriptions", label: "Subscriptions", icon: "finance" },
     { id: "offers",    label: "Offers",     icon: "tag"       },
     { id: "analytics", label: "Analytics",  icon: "analytics" },
     { id: "users",     label: "Users",      icon: "users"     },

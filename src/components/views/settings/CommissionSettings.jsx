@@ -81,8 +81,8 @@ export default function CommissionSettings() {
       <div>
         <h3 className="text-lg font-syne font-bold text-white mb-1">Platform Commission</h3>
         <p className="text-xs text-white/40 mb-5">
-          The share Keplix keeps from each completed booking. The rest is paid out to
-          the vendor.
+          Legacy: the share Keplix kept from old online booking payments. Customers now
+          pay the garage directly, so this no longer applies to new bookings.
         </p>
       </div>
 

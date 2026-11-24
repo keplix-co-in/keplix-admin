@@ -72,7 +72,42 @@ export const getVendors = async (type = 'all', page = 1, limit = 10) => {
   }
 };
 
+/**
+ * Approve / reject / suspend a vendor: PATCH /admin/vendors/:id/status
+ * (super_admin only on the backend). `reason` (3-500 chars) is required for
+ * rejected and suspended. Throws Error with the backend's message on failure.
+ */
+export const setVendorStatus = async (id, status, reason) => {
+  const response = await authFetch(`${API_URL}/admin/vendors/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    body: JSON.stringify(reason ? { status, reason } : { status }),
+  });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    const msg = err.message || err.error?.message || `Failed to update vendor (${response.status})`;
+    // WHY: ONBOARDING_INCOMPLETE carries the missing fields; show them to the admin.
+    throw new Error(Array.isArray(err.missing) && err.missing.length ? `${msg} Missing: ${err.missing.join(', ')}` : msg);
+  }
+  return response.json();
+};
+
+/**
+ * GET /admin/vendors/:id -- full onboarding details for admin verification
+ * (bank/UPI masked server-side). Returns the `data` object.
+ */
+export const getVendorDetail = async (id) => {
+  const response = await authFetch(`${API_URL}/admin/vendors/${encodeURIComponent(id)}`, { method: 'GET' });
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    throw new Error(err.message || `Failed to load vendor (${response.status})`);
+  }
+  const body = await response.json();
+  return body.data || body;
+};
+
 export default {
+  getVendorDetail,
   getVendorMetrics,
-  getVendors
+  getVendors,
+  setVendorStatus,
 };

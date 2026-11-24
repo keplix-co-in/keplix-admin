@@ -11,6 +11,7 @@ import SettingsView from '../components/views/SettingsView';
 import BlogsView from '../components/views/BlogsView';
 import WalkInJobsView from '../components/views/WalkInJobsView';
 import HealthComponentsView from '../components/views/HealthComponentsView';
+import SubscriptionsView from '../components/views/SubscriptionsView';
 import OffersView from '../components/views/OffersView';
 import FounderView from '../components/views/founder/FounderView';
 import FounderLayout from '../components/views/founder/FounderLayout';
@@ -146,6 +147,7 @@ export default function KeplixAdmin() {
             <Route path="/bookings" element={<BookingsView filter={bookingFilter} setFilter={setBookingFilter} />} />
             <Route path="/walkins" element={<WalkInJobsView />} />
             <Route path="/health-components" element={<HealthComponentsView />} />
+            <Route path="/subscriptions" element={<SubscriptionsView />} />
             <Route path="/offers" element={<OffersView />} />
             <Route path="/analytics" element={<AnalyticsView />} />
             <Route path="/users" element={<UsersView />} />

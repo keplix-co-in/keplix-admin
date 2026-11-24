@@ -14,6 +14,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 vi.mock('../services/vendorsApi', () => ({
   getVendors: vi.fn(),
   getVendorMetrics: vi.fn(),
+  setVendorStatus: vi.fn(),
 }));
 vi.mock('../services/usersApi', () => ({
   getUsers: vi.fn(),

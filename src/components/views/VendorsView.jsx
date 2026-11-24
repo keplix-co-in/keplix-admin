@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { vendorStatusConfig } from "../../data/config";
 import { getVendors } from "../../services/vendorsApi";
+import { isSuperAdmin } from "../../services/authApi";
+import VendorReviewModal from "./VendorReviewModal.jsx";
 import { Icon } from "../ui/Icon";
 import VendorCard from "../Cards/VendorCard";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table";
@@ -20,6 +22,8 @@ const keyMap = {
 export default function VendorsView({ filter, setFilter }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedVendor, setSelectedVendor] = useState(null);
+  const [reviewing, setReviewing] = useState(null);
+  const canApprove = isSuperAdmin();
 
   const filters = ["All", "Active", "Pending", "Suspended", "Uninstalled"];
 
@@ -167,23 +171,18 @@ export default function VendorsView({ filter, setFilter }) {
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        {/* This was a green "✓" with NO onClick -- it looked like an
-                            approve action and did nothing. There is no vendor-approval
-                            endpoint on the backend at all (routes/Admin/vendor.js
-                            defines only /vendors and /vendors/metrics), so there is
-                            nothing to wire it to. Shown disabled with an explanation
-                            rather than removed, so the operator can still see which
-                            vendors are awaiting a decision. */}
-                        {v.status === "pending" && (
-                          <button
-                            disabled
-                            title="Vendor approval isn't available yet — the backend has no approve endpoint."
-                            aria-label="Approve vendor (not available yet)"
-                            className="py-1.5 px-3 rounded-lg text-[11px] font-semibold font-sans bg-white/5 text-brand-gray-600 border border-white/10 cursor-not-allowed"
-                          >
-                            ✓
-                          </button>
-                        )}
+                        {/* WHY: approval now happens only inside the review panel,
+                            after the admin has seen every detail (owner decision
+                            2026-11-24). Every admin can open it; only super_admin
+                            gets the decision buttons. */}
+                        <button
+                          type="button"
+                          onClick={() => setReviewing(v)}
+                          aria-label={`Review ${v.name}`}
+                          className="py-1.5 px-3 rounded-lg text-[11px] font-semibold font-sans bg-white/10 text-white border border-white/10 cursor-pointer hover:bg-white/15"
+                        >
+                          Review
+                        </button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -215,6 +214,15 @@ export default function VendorsView({ filter, setFilter }) {
             Next
           </button>
         </div>
+      )}
+
+      {reviewing && (
+        <VendorReviewModal
+          vendor={reviewing}
+          canDecide={canApprove}
+          onClose={() => setReviewing(null)}
+          onChanged={() => { setReviewing(null); fetchVendors(); }}
+        />
       )}
 
       {selectedVendor && <VendorCard vendor={selectedVendor} onClose={() => setSelectedVendor(null)} />}

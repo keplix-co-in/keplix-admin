@@ -1,23 +1,19 @@
 const STEPS = [
-  { label: "User Pays",      sublabel: "Full booking amount", icon: "👤", color: "#2196F3", amount: "₹1,000" },
-  { label: "Keplix Escrow",  sublabel: "Held by payment GW",  icon: "🏦", color: "#9C27B0", amount: "₹1,000" },
-  { label: "Service Done",   sublabel: "Vendor completes job", icon: "✅", color: "#4CAF50", amount: "" },
-  { label: "Commission Cut", sublabel: "10% platform fee",     icon: "💎", color: "#d9040d", amount: "₹100" },
-  { label: "Vendor Payout",  sublabel: "Within 72 hours",      icon: "🏪", color: "#ff9944", amount: "₹900" },
+  { label: "Customer Pays Garage", sublabel: "Cash or the garage UPI", icon: "👤", color: "#2196F3", amount: "" },
+  { label: "Garage Marks Paid",    sublabel: "Cash / UPI / card",      icon: "✅", color: "#4CAF50", amount: "" },
+  { label: "Garage Subscription",  sublabel: "Paid online to Keplix",  icon: "💎", color: "#d9040d", amount: "" },
 ];
 
 /**
- * Static illustrative diagram, no props/state -- split out of FinanceView.jsx.
- * Labelled as illustrative because the figures are hardcoded constants, not
- * live data — without this an operator reasonably reads them as real
- * balances. The 10% is kept in step with PLATFORM_FEE_PERCENTAGE in
- * services/paymentService.js.
+ * Static diagram, no props/state. Since 2026-11-23 customers pay the garage
+ * directly; the payment gateway is used only for garage subscriptions, and the
+ * old 10% fee / escrow / payout flow no longer applies to new bookings.
  */
 export default function CashFlowPipeline() {
   return (
     <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden mb-5 p-6">
-      <div className="font-syne text-base font-bold mb-1">💸 Cash Flow Pipeline</div>
-      <div className="text-xs text-brand-gray-700 mb-5">Illustrative example — not live figures.</div>
+      <div className="font-syne text-base font-bold mb-1">💸 How money flows now</div>
+      <div className="text-xs text-brand-gray-700 mb-5">Customers pay the garage directly. Online payments are only for garage subscriptions.</div>
       <div className="flex items-center">
         {STEPS.map((step, i, arr) => (
           <div key={i} className={`flex items-center ${i < arr.length - 1 ? 'flex-1' : ''}`}>

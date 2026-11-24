@@ -10,9 +10,9 @@ const formatInr = (val) =>
  */
 export default function FinanceKpis({ kpis, error, onRetry }) {
   const financeKpis = [
-    { label: "Total Collected (Escrow)", value: formatInr(kpis?.totalCollected), icon: "🏦", color: "#2196F3" },
+    { label: "Old online payments (collected)", value: formatInr(kpis?.totalCollected), icon: "🏦", color: "#2196F3" },
     { label: "Disbursed to Vendors",     value: formatInr(kpis?.disbursed), icon: "📤", color: "#4CAF50" },
-    { label: "Platform Commission",      value: formatInr(kpis?.commission), icon: "💎", color: "#d9040d" },
+    { label: "Old commission (online payments)",      value: formatInr(kpis?.commission), icon: "💎", color: "#d9040d" },
     { label: "Pending Disbursement",     value: formatInr(kpis?.pendingDisbursement), icon: "⏳", color: "#d9040d", alert: true },
     { label: "Refunds Issued",           value: formatInr(kpis?.refunds), icon: "↩️", color: "#9C27B0" },
     { label: "Failed Payouts",           value: formatInr(kpis?.failed), icon: "❌", color: "#d9040d", alert: true },

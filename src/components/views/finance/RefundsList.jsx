@@ -64,7 +64,7 @@ export default function RefundsList({ reloadKey = 0, onRefunded }) {
   return (
     <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden mb-5">
       <div className="p-6 pb-3">
-        <div className="font-syne text-base font-bold mb-1">↩️ Refunds</div>
+        <div className="font-syne text-base font-bold mb-1">↩️ Refunds (old online payments)</div>
         <div className="text-xs text-brand-gray-700 mb-3">
           Every refund, plus paid bookings that were cancelled and still need one.
         </div>

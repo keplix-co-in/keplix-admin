@@ -162,7 +162,7 @@ export default function PayoutQueue({ queue, loading, error, onRetry, onChanged 
 
       <div className="bg-brand-gray-100 rounded-[20px] border border-white/5 overflow-hidden">
         <div className="p-5 px-6 border-b border-white/5 flex items-center justify-between">
-          <span className="font-syne text-base font-bold">⏳ Payout Queue</span>
+          <span className="font-syne text-base font-bold">⏳ Payout Queue (old online payments)</span>
           {/* M-3: settle is authorizeSuperAdmin on the backend; disable for
               other roles so they don't hit a 403 per row. */}
           <Button size="sm" loading={initiateBusy} onClick={handleInitiateAll} disabled={!superAdmin} title={!superAdmin ? "Super admin only" : undefined}>
